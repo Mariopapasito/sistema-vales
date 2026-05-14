@@ -1,0 +1,234 @@
+.report-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* HEADER */
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 3px solid #1a73e8;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.company-info h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #1a73e8;
+  font-weight: bold;
+}
+
+.order-number {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.date-info {
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.date-info p {
+  margin: 0.3rem 0;
+  color: #666;
+}
+
+/* SECTIONS */
+.report-section {
+  margin-bottom: 2rem;
+  page-break-inside: avoid;
+}
+
+.section-title {
+  background: #f0f4f9;
+  color: #1a73e8;
+  padding: 0.8rem 1rem;
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-left: 4px solid #1a73e8;
+}
+
+/* GRID LAYOUT */
+.section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* FIELDS */
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field.full-width {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-weight: bold;
+  color: #1a73e8;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field p {
+  margin: 0;
+  padding: 0.5rem;
+  background: #f9f9f9;
+  border-left: 3px solid #e8eef7;
+  color: #333;
+  min-height: 1.5rem;
+}
+
+/* TEXT BOX */
+.text-box {
+  padding: 1rem;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-left: 3px solid #1a73e8;
+  min-height: 60px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 0.95rem;
+}
+
+/* EVALUATION */
+.evaluation {
+  background: #f0f4f9;
+  padding: 1.5rem;
+  border-radius: 4px;
+}
+
+.evaluation label {
+  display: block;
+  font-weight: bold;
+  color: #1a73e8;
+  margin-bottom: 1rem;
+}
+
+.status-badges {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  color: #666;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.badge.active {
+  border-color: #1a73e8;
+  background: #e8f0fe;
+  color: #1a73e8;
+  font-weight: bold;
+}
+
+/* SIGNATURES */
+.signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 3rem;
+}
+
+.signature-box {
+  text-align: center;
+}
+
+.signature-line {
+  border-top: 1px solid #333;
+  margin: 3rem 0 0.3rem 0;
+  min-height: 2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.signature-name {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: bold;
+}
+
+/* FOOTER */
+.report-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.timestamp {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* PRINT STYLES */
+@media print {
+  .report-container {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .report-section {
+    page-break-inside: avoid;
+  }
+
+  .section-grid {
+    break-inside: avoid;
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .report-container {
+    padding: 1rem;
+  }
+
+  .report-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .date-info {
+    text-align: left;
+  }
+
+  .section-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .signatures {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .company-info h2 {
+    font-size: 1.4rem;
+  }
+}

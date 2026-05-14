@@ -1,0 +1,14 @@
+@media (max-width: 768px) {
+  main {
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Ensure logout button is always accessible */
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}

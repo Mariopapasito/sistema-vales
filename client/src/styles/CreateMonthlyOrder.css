@@ -1,0 +1,368 @@
+/* ===================== Create/Detail Monthly Order - Blue/White Glass ===================== */
+
+.create-order-page {
+  display: flex;
+  height: 100vh;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.create-order-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.create-order-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Back button */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.btn-back:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+/* Document panel */
+.document-glass {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+
+/* Document top header */
+.doc-header,
+.mo-doc-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  padding: 1.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.doc-header-left h1,
+.mo-doc-header-left h1 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 0 0 0.2rem 0;
+}
+
+.doc-header-left p,
+.mo-doc-header-left p {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.doc-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.pill-aceites   { background: rgba(251,191,36,0.2); color: #fde68a; border: 1px solid rgba(251,191,36,0.4); }
+.pill-papeleria { background: rgba(147,197,253,0.2); color: #bfdbfe; border: 1px solid rgba(147,197,253,0.4); }
+.pill-limpieza  { background: rgba(110,231,183,0.2); color: #a7f3d0; border: 1px solid rgba(110,231,183,0.4); }
+
+/* Meta info row */
+.doc-meta {
+  display: flex;
+  gap: 2rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
+  flex-wrap: wrap;
+}
+
+.doc-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.doc-meta-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.doc-meta-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Status pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.status-pill.borrador   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.status-pill.enviado    { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.status-pill.completado { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+/* Table */
+.doc-table-wrap {
+  overflow-x: auto;
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.doc-table thead tr {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.doc-table th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.doc-table th.center,
+.doc-table td.center {
+  text-align: center;
+}
+
+.doc-table td {
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+.doc-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.doc-table .row-num {
+  width: 40px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* Table inputs */
+.doc-table input[type="text"],
+.doc-table input[type="number"] {
+  width: 100%;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.doc-table input[type="text"]::placeholder,
+.doc-table input[type="number"]::placeholder {
+  color: #cbd5e1;
+}
+
+.doc-table input[type="text"]:focus,
+.doc-table input[type="number"]:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147,197,253,0.25);
+}
+
+.doc-table input[type="number"] {
+  width: 75px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.doc-table input[type="number"]::-webkit-inner-spin-button,
+.doc-table input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
+
+/* Checkbox cell */
+.doc-table td.center input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  accent-color: #2563eb;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Signature */
+.doc-signature {
+  padding: 2rem;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+  display: flex;
+  justify-content: center;
+}
+
+.signature-box {
+  text-align: center;
+  padding: 1.25rem 3rem;
+  border-top: 1.5px solid #cbd5e1;
+  min-width: 220px;
+}
+
+.signature-box .sig-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+.signature-box .sig-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Actions footer */
+.doc-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1.25rem 2rem;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+
+.btn-glass-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.3rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #475569;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.btn-glass-cancel:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.btn-glass-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.3rem;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+}
+
+.btn-glass-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37,99,235,0.4);
+}
+
+.btn-glass-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.3rem;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+}
+
+.btn-glass-complete:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(5,150,105,0.4);
+}
+
+.btn-glass-cancel:disabled,
+.btn-glass-save:disabled,
+.btn-glass-complete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .create-order-main { padding: 1rem; }
+  .doc-header { flex-direction: column; align-items: flex-start; }
+  .doc-meta { gap: 1rem; }
+  .doc-actions { flex-direction: column; }
+  .btn-glass-cancel, .btn-glass-save, .btn-glass-complete { width: 100%; justify-content: center; }
+  .doc-table th, .doc-table td { padding: 0.5rem 0.6rem; font-size: 0.8rem; }
+}

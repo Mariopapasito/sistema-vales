@@ -1,0 +1,125 @@
+/* OrderDetail Container */
+[style*="display: flex"][style*="height: 100vh"] {
+  position: relative;
+}
+
+/* Main content */
+main {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  background: #f8fafc;
+}
+
+/* Header buttons container */
+[style*="display: flex"][style*="justifyContent: space-between"] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Mobile menu button */
+.mobile-menu-btn {
+  display: none !important;
+  padding: 0.6rem 0.8rem !important;
+  background: #0f172a !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+}
+
+.mobile-menu-btn:hover {
+  background: #1e293b !important;
+}
+
+/* Desktop logout button */
+.desktop-logout-btn {
+  display: flex !important;
+  padding: 0.6rem 1.2rem !important;
+  background: #dc2626 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.desktop-logout-btn:hover {
+  background: #b91c1c !important;
+}
+
+/* ========================================
+   DESKTOP (> 768px)
+   ======================================== */
+
+@media (min-width: 769px) {
+  main {
+    padding: 1.5rem 2rem;
+  }
+
+  .mobile-menu-btn {
+    display: none !important;
+  }
+
+  .desktop-logout-btn {
+    display: flex !important;
+  }
+}
+
+/* ========================================
+   MOBILE (≤ 768px)
+   ======================================== */
+
+@media (max-width: 768px) {
+  main {
+    padding: 1rem;
+  }
+
+  .mobile-menu-btn {
+    display: block !important;
+    order: -1;
+  }
+
+  .desktop-logout-btn {
+    display: none !important;
+  }
+
+  /* Header buttons responsive */
+  [style*="display: flex"][style*="justifyContent: space-between"] {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  /* Make buttons more mobile-friendly */
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* ========================================
+   MOBILE: document grid 2col → 1col
+   ======================================== */
+@media (max-width: 768px) {
+  /* Main page background */
+  main {
+    background: var(--color-bg) !important;
+  }
+
+  /* doc grid */
+  .doc-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* firma images should always show on white bg */
+
+
