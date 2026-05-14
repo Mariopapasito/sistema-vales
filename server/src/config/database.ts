@@ -3,7 +3,7 @@ import { Sequelize } from 'sequelize';
 const dbUrl = process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL || process.env.DATABASE_URL;
 
 const sequelize = dbUrl
-  ? new Sequelize(dbUrl, { dialect: 'mysql', logging: false, dialectOptions: { ssl: false } })
+  ? new Sequelize(dbUrl, { dialect: 'mysql', logging: false, dialectOptions: { ssl: { rejectUnauthorized: false } } })
   : new Sequelize({
       dialect: 'mysql',
       host: process.env.DB_HOST || 'localhost',
