@@ -114,7 +114,7 @@ export class NotificationService {
       }
     };
 
-    await this.notifyByRoles(['sistemas', 'jefe', 'estacion'], notificationData);
+    await this.notifyByRoles(['sistemas', 'jefe', 'estacion', 'almacen', 'constructora'], notificationData);
   }
 }
 

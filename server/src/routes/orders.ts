@@ -18,8 +18,9 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     if (!userRole) return res.status(401).json({ message: 'User role not found' });
 
     // Role-based base filter
+    const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
     let where: any = {};
-    if (userRole === 'estacion') where.usuarioId = userId;
+    if (ESTACION_LIKE.includes(userRole || '')) where.usuarioId = userId;
     else if (userRole === 'sistemas') {
       where[Op.or] = [
         { tipo: 'sistemas' },
@@ -95,7 +96,7 @@ router.get('/:id', protect, async (req: AuthRequest, res) => {
     });
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    if (userRole === 'estacion' && order.usuarioId !== userId)
+    if (ESTACION_LIKE.includes(userRole || '') && order.usuarioId !== userId)
       return res.status(403).json({ message: 'Not authorized' });
     if (userRole === 'sistemas' && order.tipo !== 'sistemas' && !(order.tipo === 'compras' && order.usuarioId === userId))
       return res.status(403).json({ message: 'Not authorized' });
@@ -115,7 +116,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
     const userId = req.userId;
     const userEstacion = req.user?.estacion;
 
-    if (!['estacion', 'jefe', 'sistemas'].includes(userRole || ''))
+    if (!['estacion', 'almacen', 'constructora', 'jefe', 'sistemas'].includes(userRole || ''))
       return res.status(403).json({ message: 'Only Estacion, Jefe and Sistemas can create orders' });
 
     const { tipo, prioridad, descripcion, observaciones } = req.body;
@@ -243,7 +244,7 @@ router.patch('/:id/estado', protect, async (req: AuthRequest, res) => {
         'En proceso': '🟡 En proceso',
         'Completada': '🟢 Completada'
       };
-      await ns.notifyByRoles(['sistemas', 'jefe', 'estacion'], {
+      await ns.notifyByRoles(['sistemas', 'jefe', 'estacion', 'almacen', 'constructora'], {
         tipo: 'ORDER_STATUS_CHANGED',
         titulo: '📊 Cambio de estado',
         mensaje: `${req.user?.nombre} cambió ${order.folio} a ${estadoLabels[estado] || estado}`,
@@ -323,7 +324,7 @@ router.patch('/:id/confirmar', protect, async (req: AuthRequest, res) => {
     const historial = order.historialCambios || [];
     const ahora = new Date();
 
-    if (userRole === 'estacion') {
+    if (ESTACION_LIKE.includes(userRole || '')) {
       if (order.usuarioId !== req.userId)
         return res.status(403).json({ message: 'Not authorized' });
       order.confirmadoEstacion = true;

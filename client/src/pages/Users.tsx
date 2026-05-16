@@ -283,14 +283,14 @@ export default function Users() {
               )}
 
               <div className="form-group">
-                <label>Estación</label>
+                <label>Departamento / Estación</label>
                 <input
                   type="text"
                   value={formData.estacion}
                   onChange={(e) =>
                     setFormData({ ...formData, estacion: e.target.value })
                   }
-                  placeholder="Ej: Estación 1, Oficina Central"
+                  placeholder="Ej: Estación 3, Almacén Norte..."
                 />
               </div>
 

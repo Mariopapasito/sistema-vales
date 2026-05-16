@@ -6,7 +6,7 @@ export interface User {
   id: number;
   nombre: string;
   email: string;
-  rol: 'jefe' | 'sistemas' | 'estacion' | 'compras';
+  rol: 'jefe' | 'sistemas' | 'estacion' | 'compras' | 'almacen' | 'constructora';
   estacion: string;
   foto?: string;
 }

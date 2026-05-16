@@ -91,7 +91,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           </div>
           <div className="user-info">
             <p className="user-name">{user?.nombre || 'Usuario'}</p>
-            <p className="user-role">{user?.rol === 'jefe' ? 'Jefe' : user?.rol === 'sistemas' ? 'Sistemas' : user?.rol === 'estacion' ? 'Estación' : 'Compras'}</p>
+            <p className="user-role">{user?.rol === 'jefe' ? 'Jefe' : user?.rol === 'sistemas' ? 'Sistemas' : user?.rol === 'estacion' ? 'Estación' : user?.rol === 'almacen' ? 'Almacén' : user?.rol === 'constructora' ? 'Constructora' : 'Compras'}</p>
             <p className="user-station">{user?.estacion || 'N/A'}</p>
           </div>
         </div>
@@ -104,15 +104,15 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="nav-text">Vales</span>
           </button>
 
-          {/* Create Order - Solo Estacion */}
-          {user?.rol === 'estacion' && (
+          {/* Create Order - Estacion + roles similares */}
+          {['estacion', 'almacen', 'constructora'].includes(user?.rol || '') && (
             <button onClick={() => handleNavClick('/create-order')} className="nav-item">
               <PlusCircleIcon className="nav-icon" />
               <span className="nav-text">Crear Vale</span>
             </button>
           )}
 
-          {/* Create Monthly Order - Estacion & Jefe */}
+          {/* Create Monthly Order - Solo Estacion & Jefe (NO almacen/constructora) */}
           {(user?.rol === 'estacion' || user?.rol === 'jefe') && (
             <button onClick={() => handleNavClick('/create-monthly-order')} className="nav-item">
               <PlusCircleIcon className="nav-icon" />

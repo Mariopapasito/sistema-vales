@@ -154,9 +154,11 @@ export const Dashboard: React.FC = () => {
     setSigPending(null);
   };
 
+  const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
+
   const confirmarOrden = async (e: React.MouseEvent, orderId: number) => {
     e.stopPropagation();
-    if (user?.rol === 'estacion') {
+    if (ESTACION_LIKE.includes(user?.rol || '')) {
       setSigPending({ orderId, newState: 'Completada', type: 'estacion' });
     } else {
       try {
@@ -175,7 +177,7 @@ export const Dashboard: React.FC = () => {
   };
 
   // Tab filter (client-side on top of server results)
-  const showTabs = user?.rol === 'jefe' || user?.rol === 'estacion' || user?.rol === 'sistemas';
+  const showTabs = user?.rol === 'jefe' || ESTACION_LIKE.includes(user?.rol || '') || user?.rol === 'sistemas';
   let displayedOrders = orders;
   if (showTabs) {
     if (selectedTab === 'sistemas') displayedOrders = orders.filter(o => o.tipo === 'sistemas');
@@ -188,7 +190,7 @@ export const Dashboard: React.FC = () => {
 
   const pendingMyConfirmation = orders.filter(o => {
     if (o.estado !== 'Completada') return false;
-    if (user?.rol === 'estacion') return o.confirmadoProveedor && !o.confirmadoEstacion;
+    if (ESTACION_LIKE.includes(user?.rol || '')) return o.confirmadoProveedor && !o.confirmadoEstacion;
     if (['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) return o.confirmadoEstacion && !o.confirmadoProveedor;
     return false;
   });
@@ -199,7 +201,7 @@ export const Dashboard: React.FC = () => {
     user?.rol === 'jefe';
 
   const canConfirm = (order: Order) => {
-    if (user?.rol === 'estacion') return !order.confirmadoEstacion;
+    if (ESTACION_LIKE.includes(user?.rol || '')) return !order.confirmadoEstacion;
     if (canChangeStatus(order)) return !order.confirmadoProveedor;
     return false;
   };

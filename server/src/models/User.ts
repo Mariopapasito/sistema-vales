@@ -6,7 +6,7 @@ class User extends Model {
   public nombre!: string;
   public email!: string;
   public password!: string;
-  public rol!: 'jefe' | 'sistemas' | 'estacion' | 'compras';
+  public rol!: 'jefe' | 'sistemas' | 'estacion' | 'compras' | 'almacen' | 'constructora';
   public estacion!: string;
   public foto?: string;
   public activo!: boolean;
@@ -33,7 +33,7 @@ User.init(
       allowNull: false,
     },
     rol: {
-      type: DataTypes.ENUM('jefe', 'sistemas', 'estacion', 'compras'),
+      type: DataTypes.ENUM('jefe', 'sistemas', 'estacion', 'compras', 'almacen', 'constructora'),
       defaultValue: 'estacion',
     },
     estacion: {
