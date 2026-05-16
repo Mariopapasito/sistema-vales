@@ -325,7 +325,7 @@ export default function MonthlyOrderDetail() {
                     </button>
                   )}
                   {canEdit && order.estado !== 'completado' && (
-                    <button className="btn-glass-complete" onClick={handleComplete} disabled={saving}>
+                    <button className="btn-glass-complete" onClick={handleConfirmar} disabled={saving}>
                       <CheckCircleIcon style={{ width: 16, height: 16 }} />
                       {saving ? 'Guardando...' : 'Marcar Completado'}
                     </button>

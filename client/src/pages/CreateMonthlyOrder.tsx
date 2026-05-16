@@ -4,9 +4,10 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
 import Sidebar from '../components/Sidebar';
-import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, CheckIcon, XMarkIcon, Bars3Icon,
+import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, CheckIcon, XMarkIcon, Bars3Icon, PlusIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/CreateMonthlyOrder.css';
+import '../styles/MonthlyOrders.css';
 
 interface Item {
   descripcion: string;
@@ -28,14 +29,14 @@ export default function CreateMonthlyOrder() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { user } = useSelector((state: RootState) => state.auth);
-  const tipo = (location.state?.tipo || 'aceites') as keyof typeof typeConfig;
+  const tipo = location.state?.tipo as keyof typeof typeConfig | undefined;
 
   const [items, setItems] = useState<Item[]>(Array(25).fill(null).map(() => ({
     descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0
   })));
   const [loading, setLoading] = useState(false);
 
-  const cfg = typeConfig[tipo];
+  const cfg = tipo ? typeConfig[tipo] : typeConfig['aceites'];
 
   const handleChange = (index: number, field: keyof Item, value: any) => {
     const next = [...items];
@@ -48,13 +49,18 @@ export default function CreateMonthlyOrder() {
   };
 
   const handleSave = async () => {
+    const filledItems = items.filter(i => i.descripcion || i.cantidad > 0);
+    if (filledItems.length === 0) {
+      alert('El pedido no puede estar vacío. Agrega al menos un artículo con descripción o cantidad.');
+      return;
+    }
     try {
       setLoading(true);
       await api.post('/monthly-orders', {
         tipo,
         estacion: user?.estacion || user?.nombre || 'Sin asignar',
         fecha: new Date().toISOString().split('T')[0],
-        items: items.filter(i => i.descripcion || i.cantidad > 0),
+        items: filledItems,
       });
       navigate('/monthly-orders');
     } catch (error: any) {
@@ -63,6 +69,106 @@ export default function CreateMonthlyOrder() {
       setLoading(false);
     }
   };
+
+  // Si no hay tipo seleccionado, mostrar selector
+  if (!tipo) {
+    const selectorCards = [
+      {
+        tipo: 'aceites' as const,
+        label: 'Aceites',
+        description: 'Lubricantes, aceites de motor y fluidos para maquinaria',
+        Icon: ArchiveBoxIcon,
+        gradient: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+        border: '#fbbf24',
+        iconBg: '#f59e0b',
+        color: '#92400e',
+      },
+      {
+        tipo: 'papeleria' as const,
+        label: 'Papelería',
+        description: 'Papelería, artículos de oficina y suministros administrativos',
+        Icon: DocumentTextIcon,
+        gradient: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+        border: '#93c5fd',
+        iconBg: '#3b82f6',
+        color: '#1e40af',
+      },
+      {
+        tipo: 'limpieza' as const,
+        label: 'Limpieza',
+        description: 'Productos de limpieza, desinfectantes y artículos de higiene',
+        Icon: SparklesIcon,
+        gradient: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+        border: '#86efac',
+        iconBg: '#22c55e',
+        color: '#166534',
+      },
+    ];
+
+    return (
+      <div className="dashboard-layout">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="dashboard-main">
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mobile-menu-btn" style={{ padding: '0.6rem 0.8rem', background: '#0f172a', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', display: 'none' }}>
+              <Bars3Icon style={{ width: '20px', height: '20px' }} />
+            </button>
+          </div>
+          <div className="dashboard-container">
+            <button className="btn-back" onClick={() => navigate('/monthly-orders')}>
+              <ArrowLeftIcon style={{ width: 16, height: 16 }} />
+              Regresar
+            </button>
+
+            {/* Header oscuro igual que Pedidos Mensuales */}
+            <div className="monthly-orders-header">
+              <div>
+                <h1>Nuevo Pedido Mensual</h1>
+                <p>Multiservicio La Villita S.A. de C.V. · Selecciona el tipo de pedido</p>
+              </div>
+            </div>
+
+            {/* Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', maxWidth: '860px', margin: '0 auto' }}>
+              {selectorCards.map(({ tipo: t, label, description, Icon, gradient, border, iconBg, color }) => (
+                <button
+                  key={t}
+                  onClick={() => navigate('/create-monthly-order', { state: { tipo: t } })}
+                  style={{
+                    background: gradient,
+                    border: `2px solid ${border}`,
+                    borderRadius: '16px',
+                    padding: '2rem 1.5rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'transform 0.18s, box-shadow 0.18s',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 28px rgba(0,0,0,0.13)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)'; }}
+                >
+                  <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon style={{ width: '28px', height: '28px', color: 'white' }} />
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 0.35rem', fontSize: '1.1rem', fontWeight: '700', color }}>{label}</p>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b', lineHeight: '1.5' }}>{description}</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color, fontSize: '0.82rem', fontWeight: '600', marginTop: 'auto' }}>
+                    <PlusIcon style={{ width: 16, height: 16 }} />
+                    Crear pedido de {label.toLowerCase()}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-layout">
@@ -89,7 +195,7 @@ export default function CreateMonthlyOrder() {
           </button>
           </div>
 <div className="dashboard-container">
-        <button className="btn-back" onClick={() => navigate('/monthly-orders')}>
+        <button className="btn-back" onClick={() => navigate('/create-monthly-order')}>
             <ArrowLeftIcon style={{ width: 16, height: 16 }} />
             Regresar
           </button>
@@ -177,7 +283,7 @@ export default function CreateMonthlyOrder() {
 
             {/* Actions */}
             <div className="doc-actions">
-              <button className="btn-glass-cancel" onClick={() => navigate('/monthly-orders')} disabled={loading}>
+              <button className="btn-glass-cancel" onClick={() => navigate('/create-monthly-order')} disabled={loading}>
                 <XMarkIcon style={{ width: 16, height: 16 }} />
                 Cancelar
               </button>

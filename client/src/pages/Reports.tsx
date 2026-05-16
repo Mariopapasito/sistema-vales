@@ -21,6 +21,12 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import '../styles/Reports.css';
 
+const getBaseURL = () => {
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000';
+  return window.location.origin;
+};
+
 interface ImageFile {
   file: File;
   preview: string;
@@ -219,7 +225,7 @@ export const Reports: React.FC = () => {
       const logoData = await new Promise<string | null>((resolve) => {
         const logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
-        logoImg.src = 'http://localhost:3000/logo.png';
+        logoImg.src = `${getBaseURL()}/logo.png`;
         
         logoImg.onload = () => {
           const canvas = document.createElement('canvas');
@@ -241,7 +247,7 @@ export const Reports: React.FC = () => {
         return new Promise<void>((resolve) => {
           const watermarkImg = new Image();
           watermarkImg.crossOrigin = 'anonymous';
-          watermarkImg.src = 'http://localhost:3000/logo.png';
+          watermarkImg.src = `${getBaseURL()}/logo.png`;
           
           watermarkImg.onload = () => {
             const canvas = document.createElement('canvas');
@@ -275,7 +281,7 @@ export const Reports: React.FC = () => {
         const image = selectedReport.imagenes[i];
         const imageUrl = image.url.startsWith('http')
           ? image.url
-          : `http://localhost:3000${image.url}`;
+          : `${getBaseURL()}${image.url}`;
 
         if (!isFirstPage) {
           pdf.addPage();
@@ -689,7 +695,7 @@ export const Reports: React.FC = () => {
               </button>
               <div className="preview-header-center">
                 <img 
-                  src="http://localhost:3000/logo.png" 
+                  src={`${getBaseURL()}/logo.png`} 
                   alt="Logo" 
                   className="preview-logo"
                 />
@@ -710,7 +716,7 @@ export const Reports: React.FC = () => {
                 {selectedReport.imagenes.map((image, idx) => {
                   const imageUrl = image.url.startsWith('http')
                     ? image.url
-                    : `http://localhost:3000${image.url}`;
+                    : `${getBaseURL()}${image.url}`;
                   
                   return (
                     <div key={idx} className="report-page">

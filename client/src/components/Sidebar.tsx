@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { useState, useEffect } from 'react';
 import { logout } from '../store/slices/authSlice';
 import { RootState } from '../store';
 import {
@@ -9,7 +10,6 @@ import {
   CalendarDaysIcon,
   UsersIcon,
   ArchiveBoxIcon,
-  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   DocumentChartBarIcon,
   XMarkIcon,
@@ -26,7 +26,16 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' && window.innerWidth > 768
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const shouldBeOpen = isDesktop || isOpen;
 
   const handleLogout = () => {
@@ -143,13 +152,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
           )}
 
-          {/* Settings - Solo Jefe */}
-          {user?.rol === 'jefe' && (
-            <button onClick={() => handleNavClick('/profile')} className="nav-item">
-              <Cog6ToothIcon className="nav-icon" />
-              <span className="nav-text">Ajustes</span>
-            </button>
-          )}
 
           {/* Profile - Todos */}
           <button onClick={() => handleNavClick('/profile')} className="nav-item">

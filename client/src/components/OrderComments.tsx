@@ -114,11 +114,14 @@ const OrderComments: React.FC<OrderCommentsProps> = ({ orderId, basePath = 'orde
 
   useEffect(() => {
     fetchComments(true);
-    // Fetch users for mention autocomplete
-    api.get('/users').then(res => {
-      const users = res.data?.users ?? res.data;
-      setAllUsers(Array.isArray(users) ? users : []);
-    }).catch(console.error);
+    // Fetch users for mention autocomplete (solo jefe/sistemas tienen permiso)
+    const canFetchUsers = currentUser?.rol === 'jefe' || currentUser?.rol === 'sistemas';
+    if (canFetchUsers) {
+      api.get('/users').then(res => {
+        const users = res.data?.users ?? res.data;
+        setAllUsers(Array.isArray(users) ? users : []);
+      }).catch(console.error);
+    }
 
     // Polling every 5 seconds for real-time updates
     pollingRef.current = setInterval(() => fetchComments(false), 5000);

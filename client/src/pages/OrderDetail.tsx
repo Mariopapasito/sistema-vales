@@ -70,7 +70,7 @@ export const OrderDetail: React.FC = () => {
     if (host === 'localhost' || host === '127.0.0.1') {
       return 'http://localhost:3000';
     }
-    return `http://${host}:3000`;
+    return window.location.origin;
   };
 
   useEffect(() => {

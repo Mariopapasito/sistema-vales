@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 import api from '../services/api';
 import '../styles/ReportTemplate.css';
 
@@ -59,6 +61,7 @@ const getRatingDB = (value?: string): string => {
 const ReportTemplate: React.FC<ReportTemplateProps> = ({ workReport, order, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
+  const { user } = useSelector((state: RootState) => state.auth);
 
   // Initialize form data when workReport changes
   useEffect(() => {
@@ -69,7 +72,8 @@ const ReportTemplate: React.FC<ReportTemplateProps> = ({ workReport, order, onUp
       faultDescription: workReport.faultDescription || order.descripcion || '',
       actionTaken: workReport.actionTaken || '',
       preventionTaken: workReport.preventionTaken || '',
-      attendedBy: workReport.attendedBy || '',
+      // Técnico: auto-fill with the logged-in sistemas user's name
+      attendedBy: workReport.attendedBy || user?.nombre || '',
       rating: getRatingDisplay(workReport.rating as string) || 'completed',
     });
   }, [workReport, order]);
