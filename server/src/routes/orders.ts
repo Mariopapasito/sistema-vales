@@ -8,6 +8,8 @@ import NotificationService from '../services/notificationService';
 
 const router = express.Router();
 
+const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
+
 // GET orders — with search & filter support
 // Query params: busqueda, folio, estado, prioridad, tipo, estacion, fechaDesde, fechaHasta
 router.get('/', protect, async (req: AuthRequest, res) => {
@@ -18,7 +20,6 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     if (!userRole) return res.status(401).json({ message: 'User role not found' });
 
     // Role-based base filter
-    const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
     let where: any = {};
     if (ESTACION_LIKE.includes(userRole || '')) where.usuarioId = userId;
     else if (userRole === 'sistemas') {
