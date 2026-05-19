@@ -33,7 +33,10 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     else return res.status(403).json({ message: `Unknown role: ${userRole}` });
 
     // Search filters from query params
-    const { busqueda, folio, estado, prioridad, tipo, estacion, fechaDesde, fechaHasta } = req.query;
+    const { busqueda, folio, estado, prioridad, tipo, estacion, fechaDesde, fechaHasta, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 20));
+    const offset = (pageNum - 1) * limitNum;
 
     if (folio) where.folio = { [Op.like]: `%${folio}%` };
     if (estado) where.estado = estado;
@@ -64,7 +67,7 @@ router.get('/', protect, async (req: AuthRequest, res) => {
       userWhere = { nombre: { [Op.like]: term } };
     }
 
-    const orders = await Order.findAll({
+    const { count, rows: orders } = await Order.findAndCountAll({
       where,
       include: [
         {
@@ -74,10 +77,19 @@ router.get('/', protect, async (req: AuthRequest, res) => {
         },
         { model: WorkReport, as: 'workReport', attributes: ['id', 'number'] }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
+      limit: limitNum,
+      offset,
+      distinct: true,
     });
 
-    res.json(orders);
+    res.json({
+      orders,
+      total: count,
+      totalPages: Math.ceil(count / limitNum),
+      currentPage: pageNum,
+      limit: limitNum,
+    });
   } catch (error: any) {
     res.status(500).json({ message: 'Error', error: error.message });
   }

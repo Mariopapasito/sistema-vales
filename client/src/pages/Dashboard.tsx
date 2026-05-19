@@ -76,6 +76,12 @@ export const Dashboard: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const LIMIT = 20;
+
   // Signature modal state
   const [sigPending, setSigPending] = useState<{ orderId: number; newState: string; type: 'sistemas' | 'estacion' } | null>(null);
 
@@ -84,6 +90,7 @@ export const Dashboard: React.FC = () => {
 
   const handleFiltersChange = useCallback((next: FilterValues) => {
     setFilters(next);
+    setCurrentPage(1); // reset to page 1 on filter change
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (next.busqueda !== filters.busqueda) {
       debounceRef.current = setTimeout(() => setDebouncedFilters(next), 400);
@@ -109,16 +116,20 @@ export const Dashboard: React.FC = () => {
       if (debouncedFilters.estacion) params.set('estacion', debouncedFilters.estacion);
       if (debouncedFilters.fechaDesde) params.set('fechaDesde', debouncedFilters.fechaDesde);
       if (debouncedFilters.fechaHasta) params.set('fechaHasta', debouncedFilters.fechaHasta);
+      params.set('page', String(currentPage));
+      params.set('limit', String(LIMIT));
 
       const qs = params.toString();
-      const response = await api.get(`/orders${qs ? `?${qs}` : ''}`);
-      setOrders(response.data);
+      const response = await api.get(`/orders?${qs}`);
+      setOrders(response.data.orders);
+      setTotalPages(response.data.totalPages);
+      setTotal(response.data.total);
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
     }
-  }, [debouncedFilters]);
+  }, [debouncedFilters, currentPage]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -319,7 +330,7 @@ export const Dashboard: React.FC = () => {
             onExportExcel={handleExportExcel}
             onExportPDF={handleExportPDF}
             showTipoFilter={user?.rol === 'jefe'}
-            resultCount={displayedOrders.length}
+            resultCount={total}
           />
 
           {/* Tabs para Jefe y Estación */}
@@ -375,6 +386,36 @@ export const Dashboard: React.FC = () => {
               <div className="orders-grid">{completadas.map(o => renderOrderCard(o, 'completada'))}</div>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pagination-container">
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >«</button>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >‹</button>
+              <span className="pagination-info">
+                Página {currentPage} de {totalPages}
+                <span className="pagination-total"> ({total} órdenes)</span>
+              </span>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >›</button>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >»</button>
+            </div>
+          )}
         </div>
       </main>
 
