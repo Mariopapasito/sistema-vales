@@ -2,8 +2,10 @@ import { Sequelize } from 'sequelize';
 
 const dbUrl = process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL || process.env.DATABASE_URL;
 
+const pool = { max: 5, min: 0, acquire: 30000, idle: 10000 };
+
 const sequelize = dbUrl
-  ? new Sequelize(dbUrl, { dialect: 'mysql', logging: false, dialectOptions: { ssl: { rejectUnauthorized: false } } })
+  ? new Sequelize(dbUrl, { dialect: 'mysql', logging: false, pool, dialectOptions: { ssl: { rejectUnauthorized: false } } })
   : new Sequelize({
       dialect: 'mysql',
       host: process.env.DB_HOST || 'localhost',
