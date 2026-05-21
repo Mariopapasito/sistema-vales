@@ -43,7 +43,7 @@ export default function CreateMonthlyOrder() {
     if (field === 'cantidad') {
       next[index][field] = value === '' ? 0 : Math.max(0, parseInt(value) || 0);
     } else {
-      next[index][field] = value;
+      (next[index] as any)[field] = value;
     }
     setItems(next);
   };

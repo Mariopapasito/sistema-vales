@@ -59,11 +59,21 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     let userWhere: any = {};
     if (busqueda) {
       const term = `%${busqueda}%`;
-      where[Op.or] = [
+      const searchOr = [
         { folio: { [Op.like]: term } },
         { descripcion: { [Op.like]: term } },
         { localizacion: { [Op.like]: term } },
       ];
+      // If role filter already uses Op.or, combine with Op.and to avoid overwriting
+      if (where[Op.or]) {
+        where[Op.and] = [
+          { [Op.or]: where[Op.or] },
+          { [Op.or]: searchOr },
+        ];
+        delete where[Op.or];
+      } else {
+        where[Op.or] = searchOr;
+      }
       userWhere = { nombre: { [Op.like]: term } };
     }
 

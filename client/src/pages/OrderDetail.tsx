@@ -33,7 +33,7 @@ interface WorkReport {
 
 interface Order {
   _id: string;
-  id?: number;
+  id: number;
   folio: string;
   prioridad: 'Alta' | 'Baja' | 'Paro' | 'Correctivo';
   estado: 'Sin iniciar' | 'En proceso' | 'Completada';
@@ -44,6 +44,7 @@ interface Order {
   User?: {
     nombre: string;
     estacion: string;
+    rol: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -51,6 +52,13 @@ interface Order {
   firma?: string;
   firma_estacion?: string;
   firma_sistemas?: string;
+  repairDescription?: string;
+  reportDateTime?: string;
+  requestorSignature?: string;
+  solutionDateTime?: string;
+  conformitySignature?: string;
+  requestorPersonal?: string;
+  stationPersonal?: string;
 }
 
 export const OrderDetail: React.FC = () => {

@@ -67,8 +67,8 @@ export interface OrdersState {
 
 export interface CreateOrderData {
   prioridad: Priority[];
-  ubicacion: string;
-  descripcionProblema: string;
+  ubicacion?: string;
+  descripcionProblema?: string;
   observaciones?: string;
   imagenes?: string[];
 }

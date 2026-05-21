@@ -43,27 +43,7 @@ export const Orders: React.FC = () => {
   };
 
   if (isLoading) {
-    return <main className="orders-main">
-        
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-          </div>Cargando órdenes...</main>;
+    return <main className="orders-main">Cargando órdenes...</main>;
   }
 
   return (

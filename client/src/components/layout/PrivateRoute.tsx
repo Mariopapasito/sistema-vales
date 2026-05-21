@@ -9,10 +9,10 @@ interface PrivateRouteProps {
 
 const PrivateRoute = ({ children, roles }: PrivateRouteProps) => {
   const location = useLocation();
-  const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
+  const { accessToken, user, initialized } = useAppSelector((state) => state.auth);
 
   // Show loading state
-  if (isLoading) {
+  if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
@@ -21,12 +21,12 @@ const PrivateRoute = ({ children, roles }: PrivateRouteProps) => {
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  if (!accessToken) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check role authorization
-  if (roles && user && !roles.includes(user.rol)) {
+  if (roles && user && !roles.includes(user.rol as UserRole)) {
     return <Navigate to="/" replace />;
   }
 
