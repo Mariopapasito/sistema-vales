@@ -161,6 +161,10 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
     await ActivityLog.sync({ force: false });
+    // Ensure users.rol ENUM includes almacen and constructora
+    await sequelize.query(`
+      ALTER TABLE users MODIFY COLUMN rol ENUM('jefe','sistemas','estacion','compras','almacen','constructora') NOT NULL DEFAULT 'estacion'
+    `).catch(() => { /* already up to date */ });
     console.log('Database synced successfully');
   } catch (error) {
     console.error('Failed to sync database:', error);

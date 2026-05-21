@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { logout } from '../store/slices/authSlice';
 import { RootState } from '../store';
 import {
@@ -23,18 +23,38 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
   const [isDesktop, setIsDesktop] = useState(
     typeof window !== 'undefined' && window.innerWidth > 768
   );
+  const [pillStyle, setPillStyle] = useState<{ top: number; height: number } | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const updatePill = () => {
+      if (activeRef.current && navRef.current) {
+        const navRect = navRef.current.getBoundingClientRect();
+        const elRect = activeRef.current.getBoundingClientRect();
+        setPillStyle({
+          top: elRect.top - navRect.top + navRef.current.scrollTop,
+          height: activeRef.current.offsetHeight,
+        });
+      }
+    };
+    // Small timeout so DOM has fully painted refs
+    const t = setTimeout(updatePill, 10);
+    return () => clearTimeout(t);
+  }, [location.pathname, user?.rol]);
 
   const shouldBeOpen = isDesktop || isOpen;
 
@@ -45,17 +65,14 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const handleNavClick = (path: string) => {
     navigate(path);
-    // Cierra el sidebar inmediatamente
-    if (onClose && !isDesktop) {
-      onClose();
-    }
+    if (onClose && !isDesktop) onClose();
   };
 
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    }
-  };
+  const handleClose = () => { if (onClose) onClose(); };
+
+  const isActive = (path: string) => location.pathname === path;
+  const navClass = (path: string) => `nav-item${isActive(path) ? ' nav-item--active' : ''}`;
+  const refIfActive = (path: string): React.RefObject<HTMLButtonElement> | undefined => isActive(path) ? activeRef : undefined;
 
   return (
     <>
@@ -97,16 +114,24 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         </div>
 
         {/* Navegación */}
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" ref={navRef}>
+          {/* Glass pill slider */}
+          {pillStyle && (
+            <div
+              className="nav-pill"
+              style={{ top: pillStyle.top, height: pillStyle.height }}
+            />
+          )}
+
           {/* Dashboard - Todos */}
-          <button onClick={() => handleNavClick('/dashboard')} className="nav-item">
+          <button ref={refIfActive('/dashboard')} onClick={() => handleNavClick('/dashboard')} className={navClass('/dashboard')}>
             <ClipboardDocumentListIcon className="nav-icon" />
             <span className="nav-text">Vales</span>
           </button>
 
           {/* Create Order - Estacion + roles similares */}
           {['estacion', 'almacen', 'constructora'].includes(user?.rol || '') && (
-            <button onClick={() => handleNavClick('/create-order')} className="nav-item">
+            <button ref={refIfActive('/create-order')} onClick={() => handleNavClick('/create-order')} className={navClass('/create-order')}>
               <PlusCircleIcon className="nav-icon" />
               <span className="nav-text">Crear Vale</span>
             </button>
@@ -114,7 +139,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
           {/* Create Monthly Order - Solo Estacion & Jefe (NO almacen/constructora) */}
           {(user?.rol === 'estacion' || user?.rol === 'jefe') && (
-            <button onClick={() => handleNavClick('/create-monthly-order')} className="nav-item">
+            <button ref={refIfActive('/create-monthly-order')} onClick={() => handleNavClick('/create-monthly-order')} className={navClass('/create-monthly-order')}>
               <PlusCircleIcon className="nav-icon" />
               <span className="nav-text">Crear Pedido Mensual</span>
             </button>
@@ -122,7 +147,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
           {/* Monthly Orders - Jefe & Compras */}
           {(user?.rol === 'jefe' || user?.rol === 'compras') && (
-            <button onClick={() => handleNavClick('/monthly-orders')} className="nav-item">
+            <button ref={refIfActive('/monthly-orders')} onClick={() => handleNavClick('/monthly-orders')} className={navClass('/monthly-orders')}>
               <ArchiveBoxIcon className="nav-icon" />
               <span className="nav-text">Pedidos Mensuales</span>
             </button>
@@ -130,7 +155,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
           {/* Calendar - Jefe & Sistemas */}
           {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
-            <button onClick={() => handleNavClick('/calendar')} className="nav-item">
+            <button ref={refIfActive('/calendar')} onClick={() => handleNavClick('/calendar')} className={navClass('/calendar')}>
               <CalendarDaysIcon className="nav-icon" />
               <span className="nav-text">Calendario</span>
             </button>
@@ -138,7 +163,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
           {/* Reports - Jefe & Sistemas */}
           {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
-            <button onClick={() => handleNavClick('/reports')} className="nav-item">
+            <button ref={refIfActive('/reports')} onClick={() => handleNavClick('/reports')} className={navClass('/reports')}>
               <DocumentChartBarIcon className="nav-icon" />
               <span className="nav-text">Reportes</span>
             </button>
@@ -146,7 +171,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
           {/* Users - Jefe & Sistemas */}
           {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
-            <button onClick={() => handleNavClick('/users')} className="nav-item">
+            <button ref={refIfActive('/users')} onClick={() => handleNavClick('/users')} className={navClass('/users')}>
               <UsersIcon className="nav-icon" />
               <span className="nav-text">Usuarios</span>
             </button>
@@ -154,15 +179,14 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
           {/* Activity Logs - Jefe & Sistemas */}
           {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
-            <button onClick={() => handleNavClick('/activity-logs')} className="nav-item">
+            <button ref={refIfActive('/activity-logs')} onClick={() => handleNavClick('/activity-logs')} className={navClass('/activity-logs')}>
               <ClipboardDocumentListIcon className="nav-icon" />
               <span className="nav-text">Logs</span>
             </button>
           )}
 
-
           {/* Profile - Todos */}
-          <button onClick={() => handleNavClick('/profile')} className="nav-item">
+          <button ref={refIfActive('/profile')} onClick={() => handleNavClick('/profile')} className={navClass('/profile')}>
             <WrenchScrewdriverIcon className="nav-icon" />
             <span className="nav-text">Mi Perfil</span>
           </button>

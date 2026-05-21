@@ -1,5 +1,8 @@
 export enum UserRole {
   ESTACIONES = 'estaciones',
+  ESTACION = 'estacion',
+  ALMACEN = 'almacen',
+  CONSTRUCTORA = 'constructora',
   SISTEMAS = 'sistemas',
   JEFE = 'jefe',
   COMPRAS = 'compras'

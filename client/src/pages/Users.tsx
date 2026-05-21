@@ -124,6 +124,8 @@ export default function Users() {
     admin: '#0066cc',
     sistemas: '#0052a3',
     estacion: '#27ae60',
+    almacen: '#16a085',
+    constructora: '#2980b9',
     compras: '#f39c12',
     jefe: '#9b59b6',
   };
@@ -274,6 +276,8 @@ export default function Users() {
                       }
                     >
                       <option value="estacion">Estación</option>
+                      <option value="almacen">Almacén</option>
+                      <option value="constructora">Constructora</option>
                       <option value="sistemas">Sistemas</option>
                       <option value="jefe">Jefe</option>
                       <option value="compras">Compras</option>
