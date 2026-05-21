@@ -51,10 +51,9 @@ export const subscribeToPushNotifications = async () => {
       return;
     }
 
-    // Request system permission first — without this, no native notifications appear
-    const granted = await requestNotificationPermission();
-    if (!granted) {
-      console.warn('Push: permiso de notificaciones no concedido');
+    // Only subscribe if permission already granted — don't prompt automatically
+    // (browser requires a user gesture to request permission)
+    if (Notification.permission !== 'granted') {
       return;
     }
 
