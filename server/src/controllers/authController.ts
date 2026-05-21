@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
+import { logActivity } from '../utils/activityLogger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret';
@@ -16,16 +17,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
     const user = await User.findOne({ where: { email, activo: true } } as any);
     if (!user) {
+      logActivity({ req, usuarioNombre: email, usuarioRol: '-', accion: 'LOGIN_FALLIDO', entidad: 'auth', detalle: `Intento fallido: ${email}` });
       res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
     const valid = await bcrypt.compare(password, (user as any).password);
     if (!valid) {
+      logActivity({ req, usuarioId: (user as any).id, usuarioNombre: (user as any).nombre, usuarioRol: (user as any).rol, accion: 'LOGIN_FALLIDO', entidad: 'auth', detalle: `Contraseña incorrecta: ${email}` });
       res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
     const accessToken = jwt.sign({ id: (user as any).id }, JWT_SECRET, { expiresIn: '8h' });
     const refreshToken = jwt.sign({ id: (user as any).id }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    logActivity({ req, usuarioId: (user as any).id, usuarioNombre: (user as any).nombre, usuarioRol: (user as any).rol, accion: 'LOGIN', entidad: 'auth', detalle: `Inicio de sesión exitoso` });
     res.json({
       accessToken,
       refreshToken,

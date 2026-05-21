@@ -2,10 +2,20 @@ import { Sequelize } from 'sequelize';
 
 const dbUrl = process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL || process.env.DATABASE_URL;
 
-const pool = { max: 5, min: 0, acquire: 30000, idle: 10000 };
+const pool = { max: 5, min: 1, acquire: 60000, idle: 300000 };
+
+const dialectOptions: any = {
+  connectTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 30000,
+};
+
+if (dbUrl) {
+  dialectOptions.ssl = { rejectUnauthorized: false };
+}
 
 const sequelize = dbUrl
-  ? new Sequelize(dbUrl, { dialect: 'mysql', logging: false, pool, dialectOptions: { ssl: { rejectUnauthorized: false } } })
+  ? new Sequelize(dbUrl, { dialect: 'mysql', logging: false, pool, dialectOptions })
   : new Sequelize({
       dialect: 'mysql',
       host: process.env.DB_HOST || 'localhost',
@@ -14,6 +24,8 @@ const sequelize = dbUrl
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'sistema_vales',
       logging: false,
+      pool,
+      dialectOptions,
     });
 
 export const connectDB = async () => {

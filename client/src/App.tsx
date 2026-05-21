@@ -13,6 +13,7 @@ import MonthlyOrders from './pages/MonthlyOrders';
 import CreateMonthlyOrder from "./pages/CreateMonthlyOrder";
 import MonthlyOrderDetail from "./pages/MonthlyOrderDetail";
 import { Reports } from "./pages/Reports";
+import ActivityLogs from './pages/ActivityLogs';
 import { restoreSession } from './store/slices/authSlice';
 import { scheduleTokenRefresh } from './services/tokenService';
 import { registerServiceWorker, subscribeToPushNotifications } from './services/pushService';
@@ -134,6 +135,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Reports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity-logs"
+        element={
+          <ProtectedRoute>
+            <ActivityLogs />
           </ProtectedRoute>
         }
       />

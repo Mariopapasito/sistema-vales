@@ -76,6 +76,9 @@ export const Dashboard: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Stats (global totals, not page-limited)
+  const [stats, setStats] = useState<{ sinIniciar: number; enProceso: number; completadas: number; total: number } | null>(null);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -120,10 +123,14 @@ export const Dashboard: React.FC = () => {
       params.set('limit', String(LIMIT));
 
       const qs = params.toString();
-      const response = await api.get(`/orders?${qs}`);
-      setOrders(response.data.orders);
-      setTotalPages(response.data.totalPages);
-      setTotal(response.data.total);
+      const [ordersRes, statsRes] = await Promise.all([
+        api.get(`/orders?${qs}`),
+        api.get('/orders/stats'),
+      ]);
+      setOrders(ordersRes.data.orders);
+      setTotalPages(ordersRes.data.totalPages);
+      setTotal(ordersRes.data.total);
+      setStats(statsRes.data);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -313,6 +320,40 @@ export const Dashboard: React.FC = () => {
               <p className="subtitle">Gestiona todas tus órdenes en un solo lugar</p>
             </div>
           </div>
+
+          {/* Stats cards */}
+          {stats && (
+            <div className="stats-cards">
+              <div className="stat-card stat-sin-iniciar">
+                <ExclamationCircleIcon className="stat-icon" />
+                <div className="stat-info">
+                  <span className="stat-number">{stats.sinIniciar}</span>
+                  <span className="stat-label">Sin Iniciar</span>
+                </div>
+              </div>
+              <div className="stat-card stat-en-proceso">
+                <ClockIcon className="stat-icon" />
+                <div className="stat-info">
+                  <span className="stat-number">{stats.enProceso}</span>
+                  <span className="stat-label">En Proceso</span>
+                </div>
+              </div>
+              <div className="stat-card stat-completadas">
+                <CheckCircleIcon className="stat-icon" />
+                <div className="stat-info">
+                  <span className="stat-number">{stats.completadas}</span>
+                  <span className="stat-label">Completadas</span>
+                </div>
+              </div>
+              <div className="stat-card stat-total">
+                <QueueListIcon className="stat-icon" />
+                <div className="stat-info">
+                  <span className="stat-number">{stats.total}</span>
+                  <span className="stat-label">Total</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {pendingMyConfirmation.length > 0 && (
             <div className="confirmation-reminder">

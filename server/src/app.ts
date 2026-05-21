@@ -29,6 +29,8 @@ import MonthlyOrderComment from './models/MonthlyOrderComment';
 import monthlyOrderCommentRoutes from './routes/monthlyOrderComments';
 import notificationRoutes from './routes/notifications';
 import orderCommentRoutes from './routes/orderComments';
+import activityLogsRoutes from './routes/activityLogs';
+import ActivityLog from './models/ActivityLog';
 
 import sequelize from './config/database';
 
@@ -88,7 +90,10 @@ app.use(express.static('public', {
 
 connectDB().catch(err => {
   console.error('Failed to connect to database:', err);
-  process.exit(1);
+  // Retry once after 5s instead of crashing
+  setTimeout(() => {
+    connectDB().catch(() => process.exit(1));
+  }, 5000);
 });
 
 // Configurar asociaciones
@@ -155,6 +160,7 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
         INDEX idx_user_id (user_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await ActivityLog.sync({ force: false });
     console.log('Database synced successfully');
   } catch (error) {
     console.error('Failed to sync database:', error);
@@ -178,6 +184,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/orders', orderCommentRoutes);
 app.use('/api/monthly-orders', monthlyOrderCommentRoutes);
+app.use('/api/activity-logs', activityLogsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

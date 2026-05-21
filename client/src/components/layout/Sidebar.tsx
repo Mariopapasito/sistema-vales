@@ -7,7 +7,8 @@ import {
   DocumentTextIcon,
   CalendarDaysIcon,
   UsersIcon,
-  XMarkIcon
+  XMarkIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 import { ROLE_LABELS } from '@/utils/constants';
 
@@ -37,6 +38,12 @@ const navItems: NavItem[] = [
     href: '/users',
     icon: UsersIcon,
     roles: [UserRole.JEFE]
+  },
+  {
+    name: 'Logs',
+    href: '/activity-logs',
+    icon: ClipboardDocumentListIcon,
+    roles: [UserRole.JEFE, UserRole.SISTEMAS]
   }
 ];
 

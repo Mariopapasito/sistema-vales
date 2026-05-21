@@ -5,10 +5,42 @@ import User from '../models/User';
 import WorkReport from '../models/WorkReport';
 import { protect, AuthRequest } from '../middleware/auth';
 import NotificationService from '../services/notificationService';
+import { logActivity } from '../utils/activityLogger';
 
 const router = express.Router();
 
 const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
+
+// GET /orders/stats — global counts by status (role-filtered)
+router.get('/stats', protect, async (req: AuthRequest, res) => {
+  try {
+    const userRole = req.user?.rol;
+    const userId = req.userId;
+
+    if (!userRole) return res.status(401).json({ message: 'User role not found' });
+
+    let where: any = {};
+    if (ESTACION_LIKE.includes(userRole)) where.usuarioId = userId;
+    else if (userRole === 'sistemas') {
+      where[Op.or] = [
+        { tipo: 'sistemas' },
+        { tipo: 'compras', usuarioId: userId },
+      ];
+    } else if (userRole === 'compras') where.tipo = 'compras';
+    else if (userRole === 'jefe') { /* sees all */ }
+    else return res.status(403).json({ message: `Unknown role: ${userRole}` });
+
+    const [sinIniciar, enProceso, completadas] = await Promise.all([
+      Order.count({ where: { ...where, estado: 'Sin iniciar' } }),
+      Order.count({ where: { ...where, estado: 'En proceso' } }),
+      Order.count({ where: { ...where, estado: 'Completada' } }),
+    ]);
+
+    res.json({ sinIniciar, enProceso, completadas, total: sinIniciar + enProceso + completadas });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+});
 
 // GET orders — with search & filter support
 // Query params: busqueda, folio, estado, prioridad, tipo, estacion, fechaDesde, fechaHasta
@@ -204,6 +236,8 @@ router.post('/', protect, async (req: AuthRequest, res) => {
       console.error('[Notification] Error sending notification:', notifErr);
     }
 
+    logActivity({ req, usuarioId: userId, usuarioNombre: req.user?.nombre, usuarioRol: userRole, accion: 'ORDEN_CREADA', entidad: 'orden', entidadId: order.id, detalle: `Folio: ${order.folio} | Tipo: ${tipo} | Prioridad: ${prioridad}` });
+
     res.status(201).json(order);
   } catch (error: any) {
     res.status(500).json({ message: 'Error creating order', error: error.message });
@@ -258,6 +292,8 @@ router.patch('/:id/estado', protect, async (req: AuthRequest, res) => {
     }
 
     await order.save();
+
+    logActivity({ req, usuarioId: req.userId, usuarioNombre: req.user?.nombre, usuarioRol: userRole, accion: 'ESTADO_CAMBIADO', entidad: 'orden', entidadId: order.id, detalle: `Folio: ${order.folio} | ${order.historialCambios?.slice(-2, -1)?.[0]?.estadoAnterior ?? '?'} → ${estado}` });
 
     // Notificar cambio de estado
     try {

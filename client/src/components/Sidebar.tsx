@@ -152,6 +152,14 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
           )}
 
+          {/* Activity Logs - Jefe & Sistemas */}
+          {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
+            <button onClick={() => handleNavClick('/activity-logs')} className="nav-item">
+              <ClipboardDocumentListIcon className="nav-icon" />
+              <span className="nav-text">Logs</span>
+            </button>
+          )}
+
 
           {/* Profile - Todos */}
           <button onClick={() => handleNavClick('/profile')} className="nav-item">
