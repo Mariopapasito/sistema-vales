@@ -16,12 +16,10 @@ import { Reports } from "./pages/Reports";
 import { restoreSession } from './store/slices/authSlice';
 import { scheduleTokenRefresh } from './services/tokenService';
 import { registerServiceWorker, subscribeToPushNotifications } from './services/pushService';
-import { registerSW } from 'virtual:pwa-register';
 import OfflineBanner from './components/OfflineBanner';
 import './App.css';
 
 // Register PWA service worker
-registerSW({ immediate: true });
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { accessToken } = useSelector((state: RootState) => state.auth);

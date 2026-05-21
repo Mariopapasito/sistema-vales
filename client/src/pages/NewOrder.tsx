@@ -32,6 +32,7 @@ const NewOrder = () => {
   const [selectedPriorities, setSelectedPriorities] = useState<Priority[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const {
     register,

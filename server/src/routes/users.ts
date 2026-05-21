@@ -78,6 +78,13 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Solo el propio usuario o jefe/sistemas pueden editar
+    const isAdminRole = req.user && ['jefe', 'sistemas'].includes(req.user.rol);
+    const isOwnProfile = req.userId === parseInt(req.params.id);
+    if (!isOwnProfile && !isAdminRole) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+
     // Update fields
     if (nombre) user.nombre = nombre;
     if (estacion) user.estacion = estacion;
@@ -121,7 +128,8 @@ router.delete('/:id', protect, canManageUsers, async (req: AuthRequest, res: Res
       return res.status(404).json({ message: 'User not found' });
     }
 
-    await user.destroy();
+    user.activo = false;
+    await user.save();
 
     res.json({ message: 'User deleted successfully' });
   } catch (error: any) {
