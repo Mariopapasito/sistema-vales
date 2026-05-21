@@ -7,7 +7,7 @@ export const registerServiceWorker = async () => {
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/service-worker.js', {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/'
     });
     console.log('Service Worker registrado:', registration);
@@ -17,6 +17,22 @@ export const registerServiceWorker = async () => {
   }
 };
 
+export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (!('Notification' in window)) {
+    console.log('Notificaciones no soportadas en este dispositivo');
+    return false;
+  }
+
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') {
+    console.warn('Permiso de notificaciones denegado por el usuario');
+    return false;
+  }
+
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
+};
+
 export const subscribeToPushNotifications = async () => {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.log('Push notifications no soportadas');
@@ -24,12 +40,10 @@ export const subscribeToPushNotifications = async () => {
   }
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-
-    if (subscription) {
-      console.log('Ya suscrito a push notifications');
-      return subscription;
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      console.log('Push: esperando autenticación');
+      return;
     }
 
     if (!VAPID_PUBLIC_KEY) {
@@ -37,23 +51,33 @@ export const subscribeToPushNotifications = async () => {
       return;
     }
 
-    const newSubscription = await registration.pushManager.subscribe({
+    // Request system permission first — without this, no native notifications appear
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      console.warn('Push: permiso de notificaciones no concedido');
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const existingSubscription = await registration.pushManager.getSubscription();
+
+    // Always re-sync with server so the DB stays current (handles DB resets / redeployments)
+    const subscriptionToSave = existingSubscription ?? await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
 
-    const token = localStorage.getItem('accessToken');
     await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(newSubscription)
+      body: JSON.stringify(subscriptionToSave)
     });
 
-    console.log('Suscrito a push notifications');
-    return newSubscription;
+    console.log('Push subscription sincronizada con servidor ✓');
+    return subscriptionToSave;
   } catch (error) {
     console.error('Error en push notifications:', error);
   }
