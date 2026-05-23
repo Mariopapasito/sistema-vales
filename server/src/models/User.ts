@@ -38,7 +38,7 @@ User.init(
     },
     estacion: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     foto: {
       type: DataTypes.TEXT('medium'),
