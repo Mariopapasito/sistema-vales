@@ -76,6 +76,15 @@ export const Dashboard: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Refs for scrolling to sections
+  const sinIniciarRef = useRef<HTMLDivElement>(null);
+  const enProcesoRef = useRef<HTMLDivElement>(null);
+  const completadasRef = useRef<HTMLDivElement>(null);
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Stats (global totals, not page-limited)
   const [stats, setStats] = useState<{ sinIniciar: number; enProceso: number; completadas: number; total: number } | null>(null);
 
@@ -324,28 +333,28 @@ export const Dashboard: React.FC = () => {
           {/* Stats cards */}
           {stats && (
             <div className="stats-cards">
-              <div className="stat-card stat-sin-iniciar">
+              <div className="stat-card stat-sin-iniciar" onClick={() => scrollToSection(sinIniciarRef)} style={{ cursor: 'pointer' }}>
                 <ExclamationCircleIcon className="stat-icon" />
                 <div className="stat-info">
                   <span className="stat-number">{stats.sinIniciar}</span>
                   <span className="stat-label">Sin Iniciar</span>
                 </div>
               </div>
-              <div className="stat-card stat-en-proceso">
+              <div className="stat-card stat-en-proceso" onClick={() => scrollToSection(enProcesoRef)} style={{ cursor: 'pointer' }}>
                 <ClockIcon className="stat-icon" />
                 <div className="stat-info">
                   <span className="stat-number">{stats.enProceso}</span>
                   <span className="stat-label">En Proceso</span>
                 </div>
               </div>
-              <div className="stat-card stat-completadas">
+              <div className="stat-card stat-completadas" onClick={() => scrollToSection(completadasRef)} style={{ cursor: 'pointer' }}>
                 <CheckCircleIcon className="stat-icon" />
                 <div className="stat-info">
                   <span className="stat-number">{stats.completadas}</span>
                   <span className="stat-label">Completadas</span>
                 </div>
               </div>
-              <div className="stat-card stat-total">
+              <div className="stat-card stat-total" onClick={() => scrollToSection(sinIniciarRef)} style={{ cursor: 'pointer' }}>
                 <QueueListIcon className="stat-icon" />
                 <div className="stat-info">
                   <span className="stat-number">{stats.total}</span>
@@ -390,8 +399,7 @@ export const Dashboard: React.FC = () => {
           )}
 
           {/* Sin iniciar */}
-          <div className="orders-section">
-            <h2 className="section-title"><ExclamationCircleIcon style={{ width: 20, height: 20 }} /> Sin Iniciar ({sin_iniciar.length})</h2>
+          <div className="orders-section" ref={sinIniciarRef}>
             {sin_iniciar.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon"><SparklesIcon style={{ width: 32, height: 32 }} /></div>
@@ -403,7 +411,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* En proceso */}
-          <div className="orders-section">
+          <div className="orders-section" ref={enProcesoRef}>
             <h2 className="section-title"><ClockIcon style={{ width: 20, height: 20 }} /> En Proceso ({en_proceso.length})</h2>
             {en_proceso.length === 0 ? (
               <div className="empty-state">
@@ -416,7 +424,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Completadas */}
-          <div className="orders-section">
+          <div className="orders-section" ref={completadasRef}>
             <h2 className="section-title"><CheckCircleIcon style={{ width: 20, height: 20 }} /> Completadas ({completadas.length})</h2>
             {completadas.length === 0 ? (
               <div className="empty-state">
