@@ -423,6 +423,15 @@ router.patch('/:id', protect, async (req: AuthRequest, res) => {
 
     await order.save();
 
+    const changedFields = [
+      prioridad !== undefined && 'prioridad',
+      localizacion !== undefined && 'localización',
+      descripcion !== undefined && 'descripción',
+      observaciones !== undefined && 'observaciones',
+    ].filter(Boolean).join(', ');
+
+    logActivity({ req, usuarioId: req.userId, usuarioNombre: req.user?.nombre, usuarioRol: userRole, accion: 'ORDEN_EDITADA', entidad: 'orden', entidadId: order.id, detalle: `Folio: ${order.folio} | Campos: ${changedFields || 'sin cambios'}` });
+
     // Recargar con relaciones
     const updatedOrder = await Order.findByPk(order.id, {
       include: [
@@ -433,7 +442,7 @@ router.patch('/:id', protect, async (req: AuthRequest, res) => {
 
     res.json(updatedOrder);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error updating order', error: error.message });
+    res.status(500).json({ message: 'Error updating order' });
   }
 });
 
@@ -487,6 +496,8 @@ router.patch('/:id/confirmar', protect, async (req: AuthRequest, res) => {
     order.historialCambios = historial;
     await order.save();
 
+    logActivity({ req, usuarioId: req.userId, usuarioNombre: req.user?.nombre, usuarioRol: userRole, accion: 'ORDEN_CONFIRMADA', entidad: 'orden', entidadId: order.id, detalle: `Folio: ${order.folio} | Por: ${ESTACION_LIKE.includes(userRole || '') ? 'estación' : 'proveedor'}${firma ? ' (con firma)' : ''}` });
+
     // Crear orden de trabajo automáticamente si ambos han confirmado y es de tipo 'sistemas'
     if (order.confirmadoEstacion && order.confirmadoProveedor && order.tipo === 'sistemas' && !order.workReport) {
       const currentUser = await User.findByPk(req.userId);
@@ -521,7 +532,7 @@ router.patch('/:id/confirmar', protect, async (req: AuthRequest, res) => {
 
     res.json(finalOrder);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error confirming order', error: error.message });
+    res.status(500).json({ message: 'Error confirming order' });
   }
 });
 
