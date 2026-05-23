@@ -31,6 +31,8 @@ import notificationRoutes from './routes/notifications';
 import orderCommentRoutes from './routes/orderComments';
 import activityLogsRoutes from './routes/activityLogs';
 import ActivityLog from './models/ActivityLog';
+import DirectMessage from './models/DirectMessage';
+import messagesRoutes from './routes/messages';
 
 import sequelize from './config/database';
 
@@ -161,6 +163,7 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
     await ActivityLog.sync({ force: false });
+    await DirectMessage.sync({ force: false });
     // Ensure users.rol ENUM includes almacen and constructora
     await sequelize.query(`
       ALTER TABLE users MODIFY COLUMN rol ENUM('jefe','sistemas','estacion','compras','almacen','constructora') NOT NULL DEFAULT 'estacion'
@@ -197,6 +200,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/orders', orderCommentRoutes);
 app.use('/api/monthly-orders', monthlyOrderCommentRoutes);
 app.use('/api/activity-logs', activityLogsRoutes);
+app.use('/api/messages', messagesRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
