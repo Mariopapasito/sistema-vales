@@ -76,7 +76,7 @@ router.get('/conversations', protect, async (req: AuthRequest, res) => {
 
     res.json(result);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error', error: error.message });
+    res.status(500).json({ message: 'Error' });
   }
 });
 
@@ -106,7 +106,7 @@ router.get('/stats', protect, async (req: AuthRequest, res) => {  try {
 
     res.json({ sinIniciar, enProceso, completadas, total: sinIniciar + enProceso + completadas });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error', error: error.message });
+    res.status(500).json({ message: 'Error' });
   }
 });
 
@@ -201,7 +201,7 @@ router.get('/', protect, async (req: AuthRequest, res) => {
       limit: limitNum,
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error', error: error.message });
+    res.status(500).json({ message: 'Error' });
   }
 });
 
@@ -228,7 +228,7 @@ router.get('/:id', protect, async (req: AuthRequest, res) => {
 
     res.json(order);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error', error: error.message });
+    res.status(500).json({ message: 'Error' });
   }
 });
 
@@ -308,7 +308,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
 
     res.status(201).json(order);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error creating order', error: error.message });
+    res.status(500).json({ message: 'Error creating order' });
   }
 });
 
@@ -386,7 +386,7 @@ router.patch('/:id/estado', protect, async (req: AuthRequest, res) => {
 
     res.json(order);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error updating status', error: error.message });
+    res.status(500).json({ message: 'Error updating status' });
   }
 });
 

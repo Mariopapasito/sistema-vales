@@ -31,7 +31,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     res.json({ success: true, data: orders });
   } catch (error: any) {
     console.error('Error fetching monthly orders:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -51,7 +51,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
     }
     res.json({ success: true, data: order });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -77,7 +77,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     res.json({ success: true, data: order });
   } catch (error: any) {
     console.error('Error creating monthly order:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -105,7 +105,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     res.json({ success: true, data: order });
   } catch (error: any) {
     console.error('Error updating monthly order:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -139,7 +139,7 @@ router.patch('/:id/confirmar', authMiddleware, async (req: Request, res: Respons
     res.json({ success: true, data: order });
   } catch (error: any) {
     console.error('Error confirming monthly order:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -169,7 +169,7 @@ router.patch('/:id/confirmar', authMiddleware, async (req: Request, res: Respons
     await order.save();
     res.json({ success: true, data: order });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -192,7 +192,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     res.json({ success: true, message: 'Pedido eliminado' });
   } catch (error: any) {
     console.error('Error deleting monthly order:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

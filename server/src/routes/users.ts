@@ -29,7 +29,7 @@ router.post('/', protect, canManageUsers, async (req: AuthRequest, res: Response
     const user = await User.create({ nombre, email, password: hashedPassword, rol: rol || 'estacion', estacion });
     res.status(201).json({ message: 'Usuario creado', user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error creando usuario', error: error.message });
+    res.status(500).json({ message: 'Error creando usuario' });
   }
 });
 
@@ -43,7 +43,7 @@ router.get('/', protect, canManageUsers, async (req: AuthRequest, res: Response)
     });
     res.json(users);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching users', error: error.message });
+    res.status(500).json({ message: 'Error fetching users' });
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       foto: user.foto,
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching user', error: error.message });
+    res.status(500).json({ message: 'Error fetching user' });
   }
 });
 
@@ -113,10 +113,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error updating user:', error);
-    res.status(500).json({ 
-      message: 'Error updating user', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Error updating user' });
   }
 });
 
@@ -133,7 +130,7 @@ router.delete('/:id', protect, canManageUsers, async (req: AuthRequest, res: Res
 
     res.json({ message: 'User deleted successfully' });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error deleting user', error: error.message });
+    res.status(500).json({ message: 'Error deleting user' });
   }
 });
 

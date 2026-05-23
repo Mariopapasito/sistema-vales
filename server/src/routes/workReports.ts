@@ -22,7 +22,7 @@ router.get('/', protect, async (req: AuthRequest, res: Response) => {
     });
     res.json(reports);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching reports', error: error.message });
+    res.status(500).json({ message: 'Error fetching reports' });
   }
 });
 
@@ -43,7 +43,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
 
     res.json(report);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching report', error: error.message });
+    res.status(500).json({ message: 'Error fetching report' });
   }
 });
 
@@ -83,7 +83,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     res.status(201).json(report);
   } catch (error: any) {
     console.error('Error creating report:', error);
-    res.status(500).json({ message: 'Error creating report', error: error.message });
+    res.status(500).json({ message: 'Error creating report' });
   }
 });
 
@@ -155,7 +155,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error updating report:', error);
-    res.status(500).json({ message: 'Error updating report', error: error.message });
+    res.status(500).json({ message: 'Error updating report' });
   }
 });
 
@@ -173,7 +173,7 @@ router.get('/user/:userId', protect, async (req: AuthRequest, res: Response) => 
 
     res.json(reports);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching user reports', error: error.message });
+    res.status(500).json({ message: 'Error fetching user reports' });
   }
 });
 
@@ -191,7 +191,7 @@ router.delete('/:id', protect, authorize('jefe', 'sistemas'), async (req: AuthRe
     await report.destroy();
     res.json({ message: 'Report deleted successfully' });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error deleting report', error: error.message });
+    res.status(500).json({ message: 'Error deleting report' });
   }
 });
 

@@ -46,7 +46,7 @@ router.get('/', protect, canView, async (req: AuthRequest, res) => {
       totalPages: Math.ceil(count / limitNum),
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error al obtener logs', error: error.message });
+    res.status(500).json({ message: 'Error al obtener logs' });
   }
 });
 

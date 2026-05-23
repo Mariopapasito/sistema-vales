@@ -30,7 +30,7 @@ router.get('/', protect, canAccessCalendar, async (req, res) => {
     });
     res.json(events);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching events', error: error.message });
+    res.status(500).json({ message: 'Error fetching events' });
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/history', protect, canAccessCalendar, async (req, res) => {
 
     res.json(Object.values(grouped));
   } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching history', error: error.message });
+    res.status(500).json({ message: 'Error fetching history' });
   }
 });
 
@@ -85,7 +85,7 @@ router.post('/', protect, canAccessCalendar, async (req: AuthRequest, res) => {
 
     res.status(201).json(event);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error creating event', error: error.message });
+    res.status(500).json({ message: 'Error creating event' });
   }
 });
 
@@ -111,7 +111,7 @@ router.put('/:id', protect, canAccessCalendar, async (req, res) => {
 
     res.json(event);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error updating event', error: error.message });
+    res.status(500).json({ message: 'Error updating event' });
   }
 });
 
@@ -130,7 +130,7 @@ router.patch('/:id/complete', protect, canAccessCalendar, async (req, res) => {
 
     res.json(event);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error updating event', error: error.message });
+    res.status(500).json({ message: 'Error updating event' });
   }
 });
 
@@ -145,7 +145,7 @@ router.delete('/:id', protect, canAccessCalendar, async (req, res) => {
     await event.destroy();
     res.json({ message: 'Event deleted successfully' });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error deleting event', error: error.message });
+    res.status(500).json({ message: 'Error deleting event' });
   }
 });
 
