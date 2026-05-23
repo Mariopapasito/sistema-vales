@@ -20,61 +20,59 @@ router.get('/conversations', protect, async (req: AuthRequest, res) => {
     const userRole = req.user?.rol;
     const userId = req.userId;
 
-    // Build role-based order filter
-    let orderWhere: any = {};
+    // Role-based WHERE clause
+    let roleFilter = '';
+    const replacements: any = { userId };
+
     if (ESTACION_LIKE.includes(userRole || '')) {
-      orderWhere.usuarioId = userId;
+      roleFilter = 'AND o.usuarioId = :userId';
     } else if (userRole === 'sistemas') {
-      orderWhere.tipo = 'sistemas';
+      roleFilter = "AND o.tipo = 'sistemas'";
     } else if (userRole === 'compras') {
-      orderWhere.tipo = 'compras';
+      roleFilter = "AND o.tipo = 'compras'";
     }
 
-    // Get orders that have at least one comment, ordered by most recent comment
-    const orders = await Order.findAll({
-      where: orderWhere,
-      include: [
-        { model: User, attributes: ['id', 'nombre', 'estacion', 'rol'] },
-        {
-          model: OrderComment,
-          as: 'comments',
-          required: true,
-          include: [{ model: User, as: 'author', attributes: ['id', 'nombre', 'rol'] }],
-        }
-      ],
-      order: [[{ model: OrderComment, as: 'comments' }, 'createdAt', 'DESC']],
-      limit: 30,
-    });
+    // Get orders with latest comment using subquery — no duplicates
+    const rows = await sequelize.query(
+      `SELECT
+         o.id AS orderId,
+         o.folio,
+         o.estado,
+         o.tipo,
+         lc.texto AS latestText,
+         lc.autor AS latestAutor,
+         lc.createdAt AS latestAt,
+         lc.totalComments
+       FROM orders o
+       INNER JOIN (
+         SELECT
+           oc.orderId,
+           oc.texto,
+           u.nombre AS autor,
+           oc.createdAt,
+           COUNT(*) OVER (PARTITION BY oc.orderId) AS totalComments,
+           ROW_NUMBER() OVER (PARTITION BY oc.orderId ORDER BY oc.createdAt DESC) AS rn
+         FROM order_comments oc
+         LEFT JOIN users u ON u.id = oc.usuarioId
+       ) lc ON lc.orderId = o.id AND lc.rn = 1
+       WHERE 1=1 ${roleFilter}
+       ORDER BY lc.createdAt DESC
+       LIMIT 30`,
+      { replacements, type: QueryTypes.SELECT }
+    ) as any[];
 
-    // Sort by latest comment per order, deduplicate
-    const seen = new Set<number>();
-    const result = orders
-      .filter((o: any) => {
-        if (seen.has(o.id)) return false;
-        seen.add(o.id);
-        return true;
-      })
-      .map((o: any) => {
-        const comments = o.comments || [];
-        const latest = comments[0];
-        return {
-          orderId: o.id,
-          folio: o.folio,
-          estado: o.estado,
-          tipo: o.tipo,
-          latestComment: latest ? {
-            texto: latest.texto,
-            autor: latest.author?.nombre,
-            createdAt: latest.createdAt,
-          } : null,
-          commentCount: comments.length,
-        };
-      })
-      .sort((a: any, b: any) => {
-        const aTime = a.latestComment ? new Date(a.latestComment.createdAt).getTime() : 0;
-        const bTime = b.latestComment ? new Date(b.latestComment.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
+    const result = rows.map((r: any) => ({
+      orderId: r.orderId,
+      folio: r.folio,
+      estado: r.estado,
+      tipo: r.tipo,
+      latestComment: r.latestAt ? {
+        texto: r.latestText,
+        autor: r.latestAutor,
+        createdAt: r.latestAt,
+      } : null,
+      commentCount: Number(r.totalComments) || 0,
+    }));
 
     res.json(result);
   } catch (error: any) {

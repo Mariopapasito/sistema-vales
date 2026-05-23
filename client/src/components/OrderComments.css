@@ -345,3 +345,96 @@
 /* Remove old chars counter — replaced by hint */
 .comment-chars { display: none; }
 
+/* ====================================================
+   Dark mode override: cuando está dentro del GlobalChat
+   ==================================================== */
+.global-chat-inner-body .order-comments {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-top: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.global-chat-inner-body .comments-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.global-chat-inner-body .comments-header h3 {
+  color: #e2e8f0;
+}
+
+.global-chat-inner-body .comments-count {
+  background: rgba(99,102,241,0.2);
+  color: #a5b4fc;
+}
+
+.global-chat-inner-body .comments-list {
+  max-height: unset;
+  flex: 1;
+  overflow-y: auto;
+  background: transparent;
+}
+
+.global-chat-inner-body .comment-author {
+  color: #e2e8f0;
+}
+
+.global-chat-inner-body .comment-text {
+  background: rgba(255,255,255,0.08);
+  color: #e2e8f0;
+}
+
+.global-chat-inner-body .comment-item.own .comment-text {
+  background: rgba(99,102,241,0.3);
+  color: #e0e7ff;
+}
+
+.global-chat-inner-body .comment-form {
+  background: rgba(255,255,255,0.04);
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.global-chat-inner-body .comment-input {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+  color: #f1f5f9;
+}
+
+.global-chat-inner-body .comment-input::placeholder {
+  color: #475569;
+}
+
+.global-chat-inner-body .comment-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+}
+
+.global-chat-inner-body .comment-no-permission {
+  background: transparent;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.global-chat-inner-body .mention-dropdown {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.global-chat-inner-body .mention-option {
+  color: #e2e8f0;
+}
+
+.global-chat-inner-body .mention-option:hover,
+.global-chat-inner-body .mention-option.active {
+  background: rgba(255,255,255,0.08);
+}
+
+.global-chat-inner-body .rol-jefe     { background: rgba(254,243,199,0.12); color: #fcd34d; }
+.global-chat-inner-body .rol-sistemas { background: rgba(237,233,254,0.12); color: #a5b4fc; }
+.global-chat-inner-body .rol-estacion { background: rgba(219,234,254,0.12); color: #93c5fd; }
+.global-chat-inner-body .rol-compras  { background: rgba(220,252,231,0.12); color: #6ee7b7; }
+
+
