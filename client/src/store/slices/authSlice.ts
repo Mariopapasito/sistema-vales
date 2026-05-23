@@ -68,8 +68,14 @@ export const restoreSession = createAsyncThunk(
           scheduleTokenRefresh(accessToken);
           return { user: response.data };
         }
-      } catch {
-        // Access token expired or invalid — try refresh token below
+      } catch (err: any) {
+        // Only try refresh if it was actually an auth error (401/403), not a network error
+        const isAuthError = err?.response?.status === 401 || err?.response?.status === 403;
+        if (!isAuthError && err?.response) {
+          // Server error (5xx), don't clear tokens — keep user logged in
+          return rejectWithValue('server_error');
+        }
+        // Auth error or expired token — fall through to refresh
       }
 
       // Access token failed, try using refresh token to get a new one
@@ -88,8 +94,13 @@ export const restoreSession = createAsyncThunk(
 
           scheduleTokenRefresh(newAccessToken);
           return { user: meResponse.data, accessToken: newAccessToken, refreshToken: newRefreshToken };
-        } catch {
-          // Refresh also failed — truly expired
+        } catch (refreshErr: any) {
+          const isNetworkError = !refreshErr?.response;
+          if (isNetworkError) {
+            // Network down — don't log out, keep tokens in localStorage
+            return rejectWithValue('network_error');
+          }
+          // True 401 on refresh — token really expired
         }
       }
 
@@ -97,6 +108,10 @@ export const restoreSession = createAsyncThunk(
       localStorage.removeItem('refreshToken');
       return rejectWithValue('Session expired');
     } catch (error: any) {
+      const isNetworkError = !error?.response;
+      if (isNetworkError) {
+        return rejectWithValue('network_error');
+      }
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       return rejectWithValue('Session expired');
@@ -155,8 +170,17 @@ const authSlice = createSlice({
         }
         state.initialized = true;
       })
-      .addCase(restoreSession.rejected, (state) => {
+      .addCase(restoreSession.rejected, (state, action) => {
         state.loading = false;
+        const reason = action.payload as string;
+        // Network error — keep tokens, just mark as initialized so spinner goes away
+        if (reason === 'network_error' || reason === 'server_error') {
+          state.initialized = true;
+          // Keep accessToken/refreshToken intact — user might still be "logged in"
+          // but we don't have user data. Try to restore user from a retry.
+          return;
+        }
+        // True session expiry or no tokens — clear everything
         state.user = null;
         state.accessToken = null;
         state.refreshToken = null;

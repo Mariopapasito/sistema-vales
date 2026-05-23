@@ -23,7 +23,20 @@ import './App.css';
 // Register PWA service worker
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { accessToken } = useSelector((state: RootState) => state.auth);
+  const { accessToken, initialized } = useSelector((state: RootState) => state.auth);
+
+  // While restoring session, show nothing (avoid flash redirect to /login)
+  if (!initialized) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', background: 'var(--bg-primary, #0f172a)'
+      }}>
+        <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
+          borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    );
+  }
 
   return accessToken ? children : <Navigate to="/login" />;
 }
@@ -41,16 +54,14 @@ export default function App() {
   }, [accessToken]);
 
   useEffect(() => {
-    registerServiceWorker();
-  }, []);
-
-  useEffect(() => {
+    // Always dispatch restoreSession — it handles both valid tokens and refresh token fallback
+    dispatch(restoreSession());
     const token = localStorage.getItem('accessToken');
     if (token) {
-      dispatch(restoreSession());
       scheduleTokenRefresh(token);
-      subscribeToPushNotifications();
     }
+    registerServiceWorker();
+    subscribeToPushNotifications();
   }, [dispatch]);
 
   return (
