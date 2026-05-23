@@ -1,6 +1,6 @@
 import Notification from '../models/Notification';
 import User from '../models/User';
-import { sendPushToRole } from '../routes/push';
+import { sendPushToRole, sendPushToUser } from '../routes/push';
 
 interface NotificationData {
   tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM';
@@ -68,6 +68,14 @@ export class NotificationService {
         mensaje: notificationData.mensaje,
         datos: notificationData.datos || {},
         leida: false
+      });
+
+      // Also send push notification to this specific user
+      await sendPushToUser(userId, {
+        titulo: notificationData.titulo,
+        mensaje: notificationData.mensaje,
+        tipo: notificationData.tipo,
+        datos: notificationData.datos || {}
       });
     } catch (error) {
       console.error('[NotificationService] Error notifying user:', error);

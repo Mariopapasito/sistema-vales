@@ -295,7 +295,7 @@ router.patch('/:id/estado', protect, async (req: AuthRequest, res) => {
 
     logActivity({ req, usuarioId: req.userId, usuarioNombre: req.user?.nombre, usuarioRol: userRole, accion: 'ESTADO_CAMBIADO', entidad: 'orden', entidadId: order.id, detalle: `Folio: ${order.folio} | ${order.historialCambios?.slice(-2, -1)?.[0]?.estadoAnterior ?? '?'} → ${estado}` });
 
-    // Notificar cambio de estado
+    // Notificar cambio de estado — solo al creador de la orden
     try {
       const ns = new NotificationService();
       const estadoLabels: Record<string, string> = {
@@ -303,12 +303,15 @@ router.patch('/:id/estado', protect, async (req: AuthRequest, res) => {
         'En proceso': '🟡 En proceso',
         'Completada': '🟢 Completada'
       };
-      await ns.notifyByRoles(['sistemas', 'jefe', 'estacion', 'almacen', 'constructora'], {
-        tipo: 'ORDER_STATUS_CHANGED',
-        titulo: '📊 Cambio de estado',
-        mensaje: `${req.user?.nombre} cambió ${order.folio} a ${estadoLabels[estado] || estado}`,
-        datos: { orderId: order.id, folio: order.folio, estado }
-      }, req.userId);
+      // Solo notificar si quien cambia el estado NO es el creador de la orden
+      if (order.usuarioId !== req.userId) {
+        await ns.notifyUser(order.usuarioId, {
+          tipo: 'ORDER_STATUS_CHANGED',
+          titulo: '📊 Cambio de estado',
+          mensaje: `${req.user?.nombre} cambió ${order.folio} a ${estadoLabels[estado] || estado}`,
+          datos: { orderId: order.id, folio: order.folio, estado }
+        });
+      }
     } catch (notifErr) {
       console.error('[Notification] Error sending status notification:', notifErr);
     }

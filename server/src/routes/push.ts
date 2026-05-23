@@ -54,6 +54,30 @@ router.post('/unsubscribe', protect, async (req: AuthRequest, res: Response) => 
   }
 });
 
+export const sendPushToUser = async (userId: number, payload: object) => {
+  try {
+    const subs = await sequelize.query<{ endpoint: string; p256dh: string; auth: string }>(
+      `SELECT ps.endpoint, ps.p256dh, ps.auth
+       FROM push_subscriptions ps
+       WHERE ps.user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    const payloadStr = JSON.stringify(payload);
+
+    await Promise.allSettled(
+      subs.map((sub) =>
+        webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payloadStr
+        )
+      )
+    );
+  } catch (error: any) {
+    console.error('Push send error (user):', error.message);
+  }
+};
+
 export const sendPushToRole = async (
   roles: string[],
   payload: object,
