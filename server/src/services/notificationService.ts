@@ -3,7 +3,7 @@ import User from '../models/User';
 import { sendPushToRole, sendPushToUser } from '../routes/push';
 
 interface NotificationData {
-  tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM';
+  tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'COMMENT';
   titulo: string;
   mensaje: string;
   datos?: any;

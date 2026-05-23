@@ -6,8 +6,36 @@ import OrderComment from '../models/OrderComment';
 import Order from '../models/Order';
 import User from '../models/User';
 import Notification from '../models/Notification';
+import NotificationService from '../services/notificationService';
 
 const router = Router();
+const ns = new NotificationService();
+
+/** Notify relevant users about a new comment */
+async function notifyNewComment(order: any, commentorId: number, commentorName: string, texto: string) {
+  const preview = texto.substring(0, 80) + (texto.length > 80 ? '…' : '');
+  const commentor = await User.findByPk(commentorId, { attributes: ['rol'] });
+  const commentorRole = commentor ? (commentor as any).rol : '';
+  const commentorIsManager = ['sistemas', 'jefe'].includes(commentorRole);
+
+  if (!commentorIsManager) {
+    // Estacion/creator commented → notify sistemas and jefe
+    await ns.notifyByRoles(['sistemas', 'jefe'], {
+      tipo: 'COMMENT',
+      titulo: '💬 Nuevo mensaje en orden',
+      mensaje: `${commentorName} en ${order.folio}: "${preview}"`,
+      datos: { orderId: order.id, folio: order.folio },
+    }, commentorId);
+  } else if (order.usuarioId !== commentorId) {
+    // Sistemas/jefe replied → notify order creator
+    await ns.notifyUser(order.usuarioId, {
+      tipo: 'COMMENT',
+      titulo: '💬 Respuesta en tu orden',
+      mensaje: `${commentorName} respondió en ${order.folio}: "${preview}"`,
+      datos: { orderId: order.id, folio: order.folio },
+    });
+  }
+}
 
 /** Extract @nombre mentions and create notifications */
 async function processMentions(texto: string, orderId: number, commentId: number, authorId: number, folio: string) {
@@ -89,6 +117,8 @@ router.post('/:id/comments', authMiddleware, async (req: AuthRequest, res: Respo
 
     // Process @mentions in background
     processMentions(texto.trim(), orderId, comment.id, usuarioId!, order.folio).catch(console.error);
+    // Notify relevant users about new comment
+    notifyNewComment(order, usuarioId!, req.user?.nombre || 'Alguien', texto.trim()).catch(console.error);
 
     res.status(201).json(full);
   } catch (err) {

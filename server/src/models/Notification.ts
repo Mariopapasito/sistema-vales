@@ -5,7 +5,7 @@ import User from './User';
 interface NotificationAttributes {
   id?: number;
   usuarioId: number;
-  tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'MENTION';
+  tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'MENTION' | 'COMMENT';
   titulo: string;
   mensaje: string;
   datos?: any;
@@ -17,7 +17,7 @@ interface NotificationAttributes {
 class Notification extends Model<NotificationAttributes> implements NotificationAttributes {
   declare id: number;
   declare usuarioId: number;
-  declare tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'MENTION';
+  declare tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'MENTION' | 'COMMENT';
   declare titulo: string;
   declare mensaje: string;
   declare datos: any;
@@ -42,7 +42,7 @@ Notification.init(
       }
     },
     tipo: {
-      type: DataTypes.ENUM('NEW_ORDER', 'ORDER_STATUS_CHANGED', 'CALENDAR_EVENT', 'SYSTEM', 'MENTION'),
+      type: DataTypes.ENUM('NEW_ORDER', 'ORDER_STATUS_CHANGED', 'CALENDAR_EVENT', 'SYSTEM', 'MENTION', 'COMMENT'),
       allowNull: false
     },
     titulo: {
