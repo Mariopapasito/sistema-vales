@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import http from 'http';
 import path from 'path';
 import { connectDB } from './config/database';
-import './config/seed';
+
 import authRoutes from './routes/auth';
 import orderRoutes from './routes/orders';
 import usersRoutes from './routes/users';
@@ -176,9 +176,9 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
     await sequelize.query(`
       ALTER TABLE notifications MODIFY COLUMN tipo ENUM('NEW_ORDER','ORDER_STATUS_CHANGED','CALENDAR_EVENT','SYSTEM','MENTION','COMMENT') NOT NULL
     `).catch(() => { /* already up to date */ });
-    console.log('Database synced successfully');
+    // keep running — DB already up to date
   } catch (error) {
-    console.error('Failed to sync database:', error);
+    console.error('[DB] Failed to sync database:', error);
   }
 })();
 
@@ -215,7 +215,7 @@ if (isProd) {
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('[ERROR MIDDLEWARE]', err);
-  res.status(500).json({ message: 'Internal server error', error: err.message });
+  res.status(500).json({ message: 'Internal server error' });
 });
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -223,8 +223,9 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const httpServer = http.createServer(app);
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[DEV] Server on http://0.0.0.0:${PORT}`);
+  }
 });
 
 export default app;

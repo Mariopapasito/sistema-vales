@@ -53,12 +53,11 @@ const attemptRefresh = async () => {
     const isNetworkError = !error.response;
     if (isNetworkError && retryCount < MAX_RETRIES) {
       retryCount++;
-      const delay = Math.min(30000 * retryCount, 120000); // 30s, 60s, 120s
-      console.warn(`Token refresh failed (network), retrying in ${delay / 1000}s...`);
+      const delay = Math.min(30000 * retryCount, 120000);
       refreshTokenTimeout = setTimeout(attemptRefresh, delay);
     } else {
-      // Refresh token expired (401) — only then force logout
-      console.error('Token refresh failed permanently:', error);
+      // Refresh token expired — force logout
+      console.error('[Auth] Session expired');
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       window.location.href = '/login';

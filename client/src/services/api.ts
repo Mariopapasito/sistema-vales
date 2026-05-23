@@ -15,7 +15,6 @@ const getAPIURL = () => {
 };
 
 const API_URL = getAPIURL();
-console.log('API_URL:', API_URL, 'hostname:', window.location.hostname);
 
 const api = axios.create({
   baseURL: API_URL,

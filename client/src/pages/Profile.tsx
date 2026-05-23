@@ -86,8 +86,6 @@ export default function Profile() {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-
-      console.log('✅ Perfil actualizado:', response.data);
     } catch (error: any) {
       console.error('Error:', error);
       alert('❌ Error al actualizar: ' + (error.response?.data?.message || error.message));

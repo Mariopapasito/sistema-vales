@@ -31,11 +31,9 @@ const sequelize = dbUrl
 export const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('MySQL connected successfully');
     await sequelize.sync({ alter: false, force: false });
-    console.log('Database synchronized');
   } catch (error) {
-    console.error('MySQL connection failed:', error);
+    console.error('[DB] Connection failed:', error);
     throw error;
   }
 };
