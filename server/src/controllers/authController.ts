@@ -28,7 +28,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     const accessToken = jwt.sign({ id: (user as any).id }, JWT_SECRET, { expiresIn: '8h' });
-    const refreshToken = jwt.sign({ id: (user as any).id }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const refreshToken = jwt.sign({ id: (user as any).id }, JWT_REFRESH_SECRET, { expiresIn: '90d' });
     logActivity({ req, usuarioId: (user as any).id, usuarioNombre: (user as any).nombre, usuarioRol: (user as any).rol, accion: 'LOGIN', entidad: 'auth', detalle: `Inicio de sesión exitoso` });
     res.json({
       accessToken,
@@ -64,8 +64,10 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       res.status(401).json({ message: 'Usuario no encontrado' });
       return;
     }
+    // Rolling refresh: issue both new access + new refresh token so session never expires
     const accessToken = jwt.sign({ id: decoded.id }, JWT_SECRET, { expiresIn: '8h' });
-    res.json({ accessToken });
+    const newRefreshToken = jwt.sign({ id: decoded.id }, JWT_REFRESH_SECRET, { expiresIn: '90d' });
+    res.json({ accessToken, refreshToken: newRefreshToken });
   } catch {
     res.status(401).json({ message: 'Token inválido' });
   }

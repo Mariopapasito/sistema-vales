@@ -52,20 +52,50 @@ export const restoreSession = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState() as any;
-      const accessToken = state.auth.accessToken || localStorage.getItem('accessToken');
+      let accessToken = state.auth.accessToken || localStorage.getItem('accessToken');
+      const storedRefresh = state.auth.refreshToken || localStorage.getItem('refreshToken');
 
-      if (!accessToken) {
+      if (!accessToken && !storedRefresh) {
         return rejectWithValue('No token found');
       }
 
-      const response = await api.get('/auth/me', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      if (accessToken) {
-        scheduleTokenRefresh(accessToken);
+      // Try /me with current access token
+      try {
+        if (accessToken) {
+          const response = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          scheduleTokenRefresh(accessToken);
+          return { user: response.data };
+        }
+      } catch {
+        // Access token expired or invalid — try refresh token below
       }
-      return { user: response.data };
+
+      // Access token failed, try using refresh token to get a new one
+      if (storedRefresh) {
+        try {
+          const refreshResponse = await api.post('/auth/refresh-token', { refreshToken: storedRefresh });
+          const newAccessToken = refreshResponse.data.accessToken;
+          const newRefreshToken = refreshResponse.data.refreshToken;
+
+          localStorage.setItem('accessToken', newAccessToken);
+          if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+
+          const meResponse = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${newAccessToken}` },
+          });
+
+          scheduleTokenRefresh(newAccessToken);
+          return { user: meResponse.data, accessToken: newAccessToken, refreshToken: newRefreshToken };
+        } catch {
+          // Refresh also failed — truly expired
+        }
+      }
+
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      return rejectWithValue('Session expired');
     } catch (error: any) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -117,6 +147,12 @@ const authSlice = createSlice({
       .addCase(restoreSession.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload.user;
+        if (action.payload.accessToken) {
+          state.accessToken = action.payload.accessToken;
+        }
+        if (action.payload.refreshToken) {
+          state.refreshToken = action.payload.refreshToken;
+        }
         state.initialized = true;
       })
       .addCase(restoreSession.rejected, (state) => {
