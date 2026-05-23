@@ -1,8 +1,11 @@
 import express from 'express';
 import { Op } from 'sequelize';
+import sequelize from '../config/database';
+import { QueryTypes } from 'sequelize';
 import Order from '../models/Order';
 import User from '../models/User';
 import WorkReport from '../models/WorkReport';
+import OrderComment from '../models/OrderComment';
 import { protect, AuthRequest } from '../middleware/auth';
 import NotificationService from '../services/notificationService';
 import { logActivity } from '../utils/activityLogger';
@@ -11,9 +14,76 @@ const router = express.Router();
 
 const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
 
-// GET /orders/stats — global counts by status (role-filtered)
-router.get('/stats', protect, async (req: AuthRequest, res) => {
+// GET /orders/conversations — recent orders with comments for global chat
+router.get('/conversations', protect, async (req: AuthRequest, res) => {
   try {
+    const userRole = req.user?.rol;
+    const userId = req.userId;
+
+    // Build role-based order filter
+    let orderWhere: any = {};
+    if (ESTACION_LIKE.includes(userRole || '')) {
+      orderWhere.usuarioId = userId;
+    } else if (userRole === 'sistemas') {
+      orderWhere.tipo = 'sistemas';
+    } else if (userRole === 'compras') {
+      orderWhere.tipo = 'compras';
+    }
+
+    // Get orders that have at least one comment, ordered by most recent comment
+    const orders = await Order.findAll({
+      where: orderWhere,
+      include: [
+        { model: User, attributes: ['id', 'nombre', 'estacion', 'rol'] },
+        {
+          model: OrderComment,
+          as: 'comments',
+          required: true,
+          include: [{ model: User, as: 'author', attributes: ['id', 'nombre', 'rol'] }],
+        }
+      ],
+      order: [[{ model: OrderComment, as: 'comments' }, 'createdAt', 'DESC']],
+      limit: 30,
+    });
+
+    // Sort by latest comment per order, deduplicate
+    const seen = new Set<number>();
+    const result = orders
+      .filter((o: any) => {
+        if (seen.has(o.id)) return false;
+        seen.add(o.id);
+        return true;
+      })
+      .map((o: any) => {
+        const comments = o.comments || [];
+        const latest = comments[0];
+        return {
+          orderId: o.id,
+          folio: o.folio,
+          estado: o.estado,
+          tipo: o.tipo,
+          latestComment: latest ? {
+            texto: latest.texto,
+            autor: latest.author?.nombre,
+            createdAt: latest.createdAt,
+          } : null,
+          commentCount: comments.length,
+        };
+      })
+      .sort((a: any, b: any) => {
+        const aTime = a.latestComment ? new Date(a.latestComment.createdAt).getTime() : 0;
+        const bTime = b.latestComment ? new Date(b.latestComment.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+});
+
+// GET /orders/stats — global counts by status (role-filtered)
+router.get('/stats', protect, async (req: AuthRequest, res) => {  try {
     const userRole = req.user?.rol;
     const userId = req.userId;
 

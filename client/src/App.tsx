@@ -18,6 +18,7 @@ import { restoreSession } from './store/slices/authSlice';
 import { scheduleTokenRefresh } from './services/tokenService';
 import { registerServiceWorker, subscribeToPushNotifications } from './services/pushService';
 import OfflineBanner from './components/OfflineBanner';
+import GlobalChat from './components/GlobalChat';
 import './App.css';
 
 // Register PWA service worker
@@ -160,6 +161,7 @@ export default function App() {
       <Route path="*" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
       </Routes>
       <OfflineBanner />
+      <GlobalChat />
     </>
   );
 }
