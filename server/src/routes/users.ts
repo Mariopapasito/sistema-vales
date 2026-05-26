@@ -54,7 +54,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.json({
       id: user.id,
       nombre: user.nombre,
@@ -125,9 +125,7 @@ router.delete('/:id', protect, canManageUsers, async (req: AuthRequest, res: Res
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.activo = false;
-    await user.save();
-
+    await user.destroy();
     res.json({ message: 'User deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ message: 'Error deleting user' });

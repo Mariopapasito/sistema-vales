@@ -164,9 +164,11 @@ export default function MonthlyOrders() {
 
   if (loading) {
     return (
-      <div className="loading-glass">
+      <div className="dashboard-layout">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <span>Cargando pedidos...</span>
+        <main className="dashboard-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span>Cargando pedidos...</span>
+        </main>
       </div>
     );
   }
