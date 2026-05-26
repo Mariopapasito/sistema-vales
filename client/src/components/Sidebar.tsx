@@ -76,12 +76,12 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   return (
     <>
-      <div 
+      <div
         className={`sidebar-overlay ${!isDesktop && isOpen ? 'active' : ''}`}
         onClick={handleClose}
         style={{ display: !isDesktop && isOpen ? 'block' : 'none' }}
       />
-      
+
       <aside className={`sidebar ${shouldBeOpen ? 'open' : 'closed'}`}>
         {/* Botón de cerrar - solo en mobile */}
         <div className="sidebar-close-btn">
@@ -129,8 +129,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="nav-text">Vales</span>
           </button>
 
-          {/* Create Order - Estacion + roles similares */}
-          {['estacion', 'almacen', 'constructora'].includes(user?.rol || '') && (
+          {/* Create Order - Estacion + roles similares + Sistemas */}
+          {['estacion', 'almacen', 'constructora', 'sistemas'].includes(user?.rol || '') && (
             <button ref={refIfActive('/create-order')} onClick={() => handleNavClick('/create-order')} className={navClass('/create-order')}>
               <PlusCircleIcon className="nav-icon" />
               <span className="nav-text">Crear Vale</span>
