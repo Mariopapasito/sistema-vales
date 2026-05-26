@@ -1,4 +1,4 @@
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BGI03HeR6D59Q5j9LovsymcUxO5ZrjcL9607fbOpacXtGUXB3IsFk8MIj--Bo-G5FqNcCZhdE_Y5SM4Tz9o5Prk';
 
 export const registerServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return;

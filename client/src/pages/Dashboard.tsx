@@ -147,7 +147,12 @@ export const Dashboard: React.FC = () => {
     }
   }, [debouncedFilters, currentPage]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  useEffect(() => {
+    fetchOrders();
+    // Auto-refresh every 30 seconds to show new orders without reload
+    const interval = setInterval(() => fetchOrders(), 30000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
 
   const updateOrderState = async (orderId: number, newState: string, firma?: string | null) => {
     try {
@@ -212,8 +217,8 @@ export const Dashboard: React.FC = () => {
   }
 
   const sin_iniciar = useMemo(() => displayedOrders.filter(o => o.estado === 'Sin iniciar'), [displayedOrders]);
-  const en_proceso  = useMemo(() => displayedOrders.filter(o => o.estado === 'En proceso'),  [displayedOrders]);
-  const completadas = useMemo(() => displayedOrders.filter(o => o.estado === 'Completada'),  [displayedOrders]);
+  const en_proceso = useMemo(() => displayedOrders.filter(o => o.estado === 'En proceso'), [displayedOrders]);
+  const completadas = useMemo(() => displayedOrders.filter(o => o.estado === 'Completada'), [displayedOrders]);
 
   const pendingMyConfirmation = orders.filter(o => {
     if (o.estado !== 'Completada') return false;
