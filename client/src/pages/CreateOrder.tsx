@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
 import Sidebar from '../components/Sidebar';
-import { Bars3Icon } from '@heroicons/react/24/outline';
+import { Bars3Icon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 
 const ESTACIONES = [
@@ -23,15 +23,39 @@ export const CreateOrder: React.FC = () => {
     observaciones: '',
     tipo: user?.rol === 'sistemas' ? 'compras' : 'sistemas',
   });
+  const [imagenes, setImagenes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (imagenes.length + files.length > 5) {
+      setError('Máximo 5 imágenes');
+      return;
+    }
+    files.forEach(file => {
+      if (file.size > 3 * 1024 * 1024) {
+        setError(`"${file.name}" supera 3MB`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setImagenes(prev => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  const removeImage = (idx: number) => {
+    setImagenes(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +67,7 @@ export const CreateOrder: React.FC = () => {
 
     try {
       setLoading(true);
-      await api.post('/orders', formData);
+      await api.post('/orders', { ...formData, imagenes });
       setError('');
       navigate('/dashboard');
     } catch (err: any) {
@@ -149,6 +173,62 @@ export const CreateOrder: React.FC = () => {
               rows={3}
               className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             ></textarea>
+          </div>
+
+          {/* Imágenes */}
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">
+              Imágenes del problema <span className="text-gray-400 font-normal">(opcional, máx. 5)</span>
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              style={{ display: 'none' }}
+            />
+            {imagenes.length < 5 && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.75rem 1rem', border: '2px dashed #d1d5db',
+                  borderRadius: '8px', background: '#f9fafb', color: '#6b7280',
+                  cursor: 'pointer', width: '100%', justifyContent: 'center',
+                  fontSize: '0.9rem', fontWeight: '500'
+                }}
+              >
+                <PhotoIcon style={{ width: 20, height: 20 }} />
+                Agregar foto(s)
+              </button>
+            )}
+            {imagenes.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
+                {imagenes.map((img, idx) => (
+                  <div key={idx} style={{ position: 'relative', width: 90, height: 90 }}>
+                    <img
+                      src={img}
+                      alt={`Imagen ${idx + 1}`}
+                      style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      style={{
+                        position: 'absolute', top: -6, right: -6,
+                        background: '#ef4444', color: 'white', border: 'none',
+                        borderRadius: '50%', width: 22, height: 22,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >
+                      <XMarkIcon style={{ width: 14, height: 14 }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Botones */}

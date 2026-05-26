@@ -81,7 +81,8 @@ router.get('/conversations', protect, async (req: AuthRequest, res) => {
 });
 
 // GET /orders/stats — global counts by status (role-filtered)
-router.get('/stats', protect, async (req: AuthRequest, res) => {  try {
+router.get('/stats', protect, async (req: AuthRequest, res) => {
+  try {
     const userRole = req.user?.rol;
     const userId = req.userId;
 
@@ -242,12 +243,26 @@ router.post('/', protect, async (req: AuthRequest, res) => {
     if (!['estacion', 'almacen', 'constructora', 'jefe', 'sistemas'].includes(userRole || ''))
       return res.status(403).json({ message: 'Only Estacion, Jefe and Sistemas can create orders' });
 
-    const { tipo, prioridad, descripcion, observaciones } = req.body;
+    const { tipo, prioridad, descripcion, observaciones, imagenes } = req.body;
     if (!['sistemas', 'compras'].includes(tipo))
       return res.status(400).json({ message: 'Invalid tipo' });
 
     if (userRole === 'sistemas' && tipo !== 'compras')
       return res.status(403).json({ message: 'Sistemas can only create compras orders' });
+
+    // Validate images: max 5, each must be base64 data URL, max ~3MB each
+    const imagenesArray: string[] = [];
+    if (Array.isArray(imagenes)) {
+      if (imagenes.length > 5)
+        return res.status(400).json({ message: 'Máximo 5 imágenes por orden' });
+      for (const img of imagenes) {
+        if (typeof img !== 'string' || !img.startsWith('data:image/'))
+          return res.status(400).json({ message: 'Formato de imagen inválido' });
+        if (img.length > 4 * 1024 * 1024) // ~3MB in base64
+          return res.status(400).json({ message: 'Cada imagen debe ser menor a 3MB' });
+        imagenesArray.push(img);
+      }
+    }
 
     const lastOrder = await Order.findOne({ order: [['id', 'DESC']] });
     const newFolio = `ORD-${String(1001 + (lastOrder?.id || 0)).padStart(5, '0')}`;
@@ -260,6 +275,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
       descripcion,
       observaciones,
       tipo,
+      imagenes: imagenesArray.length > 0 ? imagenesArray : null,
       estado: 'Sin iniciar',
       confirmadoEstacion: false,
       confirmadoProveedor: false,
