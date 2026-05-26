@@ -33,8 +33,10 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         height: '100vh', background: 'var(--bg-primary, #0f172a)'
       }}>
-        <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
-          borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{
+          width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
+          borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite'
+        }} />
       </div>
     );
   }
@@ -48,9 +50,8 @@ export default function App() {
 
   useEffect(() => {
     if (accessToken) {
-
-    } else {
-
+      // Re-register push subscription when user logs in
+      registerServiceWorker().then(() => subscribeToPushNotifications());
     }
   }, [accessToken]);
 
@@ -62,103 +63,102 @@ export default function App() {
       scheduleTokenRefresh(token);
     }
     registerServiceWorker();
-    subscribeToPushNotifications();
   }, [dispatch]);
 
   return (
     <>
       <Routes>
-          <Route path="/login" element={<Login />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/create-order"
-        element={
-          <ProtectedRoute>
-            <CreateOrder />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/orders/:id"
-        element={
-          <ProtectedRoute>
-            <OrderDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/calendar"
-        element={
-          <ProtectedRoute>
-            <Calendar />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/users"
-        element={
-          <ProtectedRoute>
-            <Users />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
-      <Route
-        path="/monthly-orders"
-        element={
-          <ProtectedRoute>
-            <MonthlyOrders />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/create-monthly-order"
-        element={
-          <ProtectedRoute>
-            <CreateMonthlyOrder />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/monthly-order/:id"
-        element={
-          <ProtectedRoute>
-            <MonthlyOrderDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <Reports />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/activity-logs"
-        element={
-          <ProtectedRoute>
-            <ActivityLogs />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-order"
+          element={
+            <ProtectedRoute>
+              <CreateOrder />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute>
+              <OrderDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute>
+              <Calendar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        <Route
+          path="/monthly-orders"
+          element={
+            <ProtectedRoute>
+              <MonthlyOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-monthly-order"
+          element={
+            <ProtectedRoute>
+              <CreateMonthlyOrder />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/monthly-order/:id"
+          element={
+            <ProtectedRoute>
+              <MonthlyOrderDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/activity-logs"
+          element={
+            <ProtectedRoute>
+              <ActivityLogs />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
       </Routes>
       <OfflineBanner />
       <GlobalChat />

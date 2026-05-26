@@ -3,7 +3,7 @@ const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
 export const registerServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return;
   try {
-    return await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    return await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
   } catch (error) {
     console.error('Error registrando Service Worker:', error);
   }
