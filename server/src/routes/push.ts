@@ -8,8 +8,8 @@ const router = express.Router();
 
 webpush.setVapidDetails(
   process.env.VAPID_EMAIL || 'mailto:admin@grupolavillita.com',
-  process.env.VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
+  process.env.VAPID_PUBLIC_KEY || 'BGI03HeR6D59Q5j9LovsymcUxO5ZrjcL9607fbOpacXtGUXB3IsFk8MIj--Bo-G5FqNcCZhdE_Y5SM4Tz9o5Prk',
+  process.env.VAPID_PRIVATE_KEY || 'OAglHpXd_04jz8kct-MKXfAZsJp8rEu4Otq5HY5k3d0'
 );
 
 router.post('/subscribe', protect, async (req: AuthRequest, res: Response) => {

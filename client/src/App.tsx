@@ -16,7 +16,7 @@ import { Reports } from "./pages/Reports";
 import ActivityLogs from './pages/ActivityLogs';
 import { restoreSession } from './store/slices/authSlice';
 import { scheduleTokenRefresh } from './services/tokenService';
-import { registerServiceWorker, subscribeToPushNotifications } from './services/pushService';
+import { registerServiceWorker, subscribeToPushNotifications, requestNotificationPermission } from './services/pushService';
 import OfflineBanner from './components/OfflineBanner';
 import GlobalChat from './components/GlobalChat';
 import './App.css';
@@ -51,7 +51,10 @@ export default function App() {
   useEffect(() => {
     if (accessToken) {
       // Re-register push subscription when user logs in
-      registerServiceWorker().then(() => subscribeToPushNotifications());
+      registerServiceWorker().then(async () => {
+        await requestNotificationPermission();
+        await subscribeToPushNotifications();
+      });
     }
   }, [accessToken]);
 
