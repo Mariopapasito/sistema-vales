@@ -7,6 +7,8 @@ import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, PencilSq
 } from '@heroicons/react/24/outline';
 import OrderComments from '../components/OrderComments';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import '../styles/CreateMonthlyOrder.css';
 
 interface Item {
@@ -143,6 +145,53 @@ export default function MonthlyOrderDetail() {
     XLSX.writeFile(wb, `${tipoLabels[order.tipo].replace(/ /g, '-')}-${order.folio}.xlsx`);
   };
 
+  const downloadAsPDF = async () => {
+    if (!order) return;
+    const element = document.getElementById('monthly-order-document');
+    if (!element) return;
+    try {
+      // Ocultar botones de acción antes de capturar
+      const actions = document.getElementById('monthly-order-actions');
+      if (actions) actions.style.display = 'none';
+
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+
+      if (actions) actions.style.display = '';
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = canvas.width / canvas.height;
+      const imgW = pageW - 20;
+      const imgH = imgW / ratio;
+
+      let y = 10;
+      let remainingH = imgH;
+      let srcY = 0;
+
+      while (remainingH > 0) {
+        const sliceH = Math.min(remainingH, pageH - 20);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = (sliceH / imgH) * canvas.height;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(sliceData, 'JPEG', 10, y, imgW, sliceH);
+        srcY += sliceCanvas.height;
+        remainingH -= sliceH;
+        if (remainingH > 0) { pdf.addPage(); y = 10; }
+      }
+
+      const tipoLabels: any = { aceites: 'Aceites', papeleria: 'Papeleria', limpieza: 'Limpieza' };
+      pdf.save(`Pedido-${tipoLabels[order.tipo]}-${order.folio}.pdf`);
+    } catch (err) {
+      console.error('Error generando PDF:', err);
+      alert('Error al generar PDF');
+    }
+  };
+
   const handleConfirmar = async () => {    try {
       setSaving(true);
       await api.patch(`/monthly-orders/${order?.id}/confirmar`);
@@ -185,7 +234,7 @@ export default function MonthlyOrderDetail() {
             Regresar
           </button>
 
-          <div className="document-glass">
+          <div className="document-glass" id="monthly-order-document">
             {/* Header */}
             <div className="mo-doc-header">
               <div className="mo-doc-header-left">
@@ -285,17 +334,23 @@ export default function MonthlyOrderDetail() {
             </div>
 
             {/* Actions */}
-            <div className="doc-actions">
+            <div className="doc-actions" id="monthly-order-actions">
               {!isEditing ? (
                 <>
                   <button className="btn-glass-cancel" onClick={() => navigate('/monthly-orders')}>
                     <ArrowLeftIcon style={{ width: 16, height: 16 }} />
                     Volver
                   </button>
-                  {['compras', 'jefe'].includes(user?.rol || '') && (
+                  {['compras', 'jefe', 'sistemas'].includes(user?.rol || '') && (
                     <button className="btn-glass-cancel" onClick={downloadAsExcel}>
                       <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
                       Descargar Excel
+                    </button>
+                  )}
+                  {['compras', 'jefe', 'sistemas'].includes(user?.rol || '') && (
+                    <button className="btn-glass-cancel" onClick={downloadAsPDF}>
+                      <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
+                      Descargar PDF
                     </button>
                   )}
                   {canEdit && (
