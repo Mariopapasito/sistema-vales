@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/OrderDetail.css';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../store';
 import api from '../services/api';
 import ReportTemplate from '../components/ReportTemplate';
 import OrderComments from '../components/OrderComments';
@@ -63,11 +64,13 @@ export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedDoc, setExpandedDoc] = useState<'vale' | 'report' | null>(null);
   const [isEditingVale, setIsEditingVale] = useState(false);
   const [editedOrder, setEditedOrder] = useState<Order | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Get API base URL
   const getApiBaseURL = () => {
@@ -91,6 +94,22 @@ export const OrderDetail: React.FC = () => {
     };
     fetchOrder();
   }, [id]);
+
+  const handleDelete = async () => {
+    if (!order) return;
+    if (!window.confirm(`¿Seguro que quieres eliminar el vale ${order.folio}? Esta acción no se puede deshacer.`)) return;
+    try {
+      setDeleting(true);
+      await api.delete(`/orders/${id}`);
+      navigate('/dashboard');
+    } catch (err: any) {
+      alert('Error al eliminar: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const canDelete = ['jefe', 'sistemas'].includes(user?.rol || '');
 
   const downloadPDF = async (docType: 'vale' | 'report') => {
     if (!order) return;
@@ -301,21 +320,45 @@ export const OrderDetail: React.FC = () => {
   return (
     <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem 2rem', width: '100%' }}>
         <div  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{
-              padding: '0.6rem 1.2rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600'
-            }}
-          >
-            ← Volver
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                padding: '0.6rem 1.2rem',
+                background: '#0f172a',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              ← Volver
+            </button>
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  padding: '0.6rem 1.2rem',
+                  background: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  opacity: deleting ? 0.6 : 1,
+                }}
+              >
+                🗑 {deleting ? 'Eliminando...' : 'Eliminar vale'}
+              </button>
+            )}
+          </div>
           <button
             onClick={() => dispatch(logout() as any)}
             className="desktop-logout-btn"

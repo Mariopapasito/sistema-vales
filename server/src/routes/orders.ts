@@ -536,4 +536,35 @@ router.patch('/:id/confirmar', protect, async (req: AuthRequest, res) => {
   }
 });
 
+// DELETE /orders/:id — solo jefe y sistemas pueden borrar
+router.delete('/:id', protect, async (req: AuthRequest, res) => {
+  try {
+    const userRole = req.user?.rol;
+    if (!['jefe', 'sistemas'].includes(userRole || '')) {
+      return res.status(403).json({ error: 'No tienes permisos para eliminar órdenes' });
+    }
+
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+    const folio = order.folio;
+    await order.destroy();
+
+    logActivity({
+      req,
+      usuarioId: req.user!.id,
+      usuarioNombre: req.user!.nombre,
+      usuarioRol: userRole!,
+      accion: 'ORDEN_ELIMINADA',
+      entidad: 'orden',
+      detalle: `Folio: ${folio}`,
+    });
+
+    res.json({ success: true, message: 'Orden eliminada' });
+  } catch (error: any) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ error: 'Error al eliminar la orden' });
+  }
+});
+
 export default router;

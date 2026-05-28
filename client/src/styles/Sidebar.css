@@ -78,7 +78,11 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
-    display: block !important;
+    display: none;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
   }
 
   .sidebar-nav {

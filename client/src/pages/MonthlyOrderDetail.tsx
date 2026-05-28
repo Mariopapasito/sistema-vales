@@ -48,6 +48,23 @@ export default function MonthlyOrderDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [editItems, setEditItems] = useState<Item[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const canDelete = ['jefe', 'sistemas'].includes(user?.rol || '');
+
+  const handleDelete = async () => {
+    if (!order) return;
+    if (!window.confirm(`¿Seguro que quieres eliminar el pedido ${order.folio}? Esta acción no se puede deshacer.`)) return;
+    try {
+      setDeleting(true);
+      await api.delete(`/monthly-orders/${order.id}`);
+      navigate('/monthly-orders');
+    } catch (err: any) {
+      alert('Error al eliminar: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => { fetchOrder(); }, [id]);
 
@@ -291,6 +308,28 @@ export default function MonthlyOrderDetail() {
                     <button className="btn-glass-complete" onClick={handleConfirmar} disabled={saving}>
                       <CheckCircleIcon style={{ width: 16, height: 16 }} />
                       {saving ? 'Guardando...' : 'Marcar Completado'}
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      style={{
+                        padding: '0.5rem 1.1rem',
+                        background: '#fee2e2',
+                        color: '#dc2626',
+                        border: '1.5px solid #fca5a5',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontSize: '0.88rem',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        opacity: deleting ? 0.6 : 1,
+                      }}
+                    >
+                      🗑 {deleting ? 'Eliminando...' : 'Eliminar pedido'}
                     </button>
                   )}
                 </>
