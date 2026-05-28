@@ -137,14 +137,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
           )}
 
-          {/* Create Monthly Order - Solo Jefe */}
-          {user?.rol === 'jefe' && (
-            <button ref={refIfActive('/create-monthly-order')} onClick={() => handleNavClick('/create-monthly-order')} className={navClass('/create-monthly-order')}>
-              <PlusCircleIcon className="nav-icon" />
-              <span className="nav-text">Crear Pedido Mensual</span>
-            </button>
-          )}
-
           {/* Monthly Orders - Jefe, Compras & Estacion */}
           {(user?.rol === 'jefe' || user?.rol === 'compras' || user?.rol === 'estacion') && (
             <button ref={refIfActive('/monthly-orders')} onClick={() => handleNavClick('/monthly-orders')} className={navClass('/monthly-orders')}>

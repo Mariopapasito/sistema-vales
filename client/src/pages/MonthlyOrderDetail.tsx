@@ -345,11 +345,13 @@ export default function MonthlyOrderDetail() {
               )}
             </div>
           </div>
+
+          {/* Comments below the document */}
+          <div style={{ marginTop: '1.5rem' }}>
+            <OrderComments orderId={parseInt(order.id)} basePath="monthly-orders" />
+          </div>
         </div>
       </main>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 24px' }}>
-        <OrderComments orderId={parseInt(order.id)} basePath="monthly-orders" />
-      </div>
     </div>
   );
 }

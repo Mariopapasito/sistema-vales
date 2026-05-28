@@ -30,6 +30,11 @@ const ACCION_LABELS: Record<string, string> = {
   LOGIN_FALLIDO: 'Intento fallido',
   ORDEN_CREADA: 'Orden creada',
   ESTADO_CAMBIADO: 'Estado cambiado',
+  PEDIDO_CREADO: 'Pedido mensual creado',
+  PEDIDO_EDITADO: 'Pedido mensual editado',
+  PEDIDO_CONFIRMADO: 'Pedido mensual confirmado',
+  PEDIDO_ELIMINADO: 'Pedido mensual eliminado',
+  PEDIDO_ERROR: 'Error en pedido mensual',
 };
 
 const ACCION_COLORS: Record<string, string> = {
@@ -37,6 +42,11 @@ const ACCION_COLORS: Record<string, string> = {
   LOGIN_FALLIDO: 'log-badge-danger',
   ORDEN_CREADA: 'log-badge-info',
   ESTADO_CAMBIADO: 'log-badge-warning',
+  PEDIDO_CREADO: 'log-badge-info',
+  PEDIDO_EDITADO: 'log-badge-warning',
+  PEDIDO_CONFIRMADO: 'log-badge-success',
+  PEDIDO_ELIMINADO: 'log-badge-danger',
+  PEDIDO_ERROR: 'log-badge-danger',
 };
 
 function formatDate(iso: string) {
@@ -132,6 +142,13 @@ export default function ActivityLogs() {
                     <option value="LOGIN_FALLIDO">Intento fallido</option>
                     <option value="ORDEN_CREADA">Orden creada</option>
                     <option value="ESTADO_CAMBIADO">Estado cambiado</option>
+                    <optgroup label="Pedidos Mensuales">
+                      <option value="PEDIDO_CREADO">Pedido creado</option>
+                      <option value="PEDIDO_EDITADO">Pedido editado</option>
+                      <option value="PEDIDO_CONFIRMADO">Pedido confirmado</option>
+                      <option value="PEDIDO_ELIMINADO">Pedido eliminado</option>
+                      <option value="PEDIDO_ERROR">Error en pedido</option>
+                    </optgroup>
                   </select>
                 </div>
                 <div className="filter-group">

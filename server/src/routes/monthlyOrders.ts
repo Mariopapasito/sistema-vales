@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { protect as authMiddleware } from '../middleware/auth';
 import MonthlyOrder from '../models/MonthlyOrder';
 import User from '../models/User';
+import { logActivity } from '../utils/activityLogger';
 
 const router = express.Router();
 
@@ -61,6 +62,11 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     const user = (req as any).user;
     const { tipo, estacion, items } = req.body;
 
+    if (!tipo) {
+      logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: 'Fallo al crear pedido: falta campo "tipo"' });
+      return res.status(400).json({ message: 'El campo tipo es requerido' });
+    }
+
     // Generate unique folio
     const folio = `PEDIDO-${tipo.toUpperCase().slice(0, 1)}-${Date.now()}`;
 
@@ -74,8 +80,12 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       createdBy: user.id
     });
 
+    logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_CREADO', entidad: 'pedido_mensual', detalle: `Folio: ${folio} | Tipo: ${tipo} | Estación: ${estacion || user.estacion || user.nombre} | Artículos: ${(items || []).length}` });
+
     res.json({ success: true, data: order });
   } catch (error: any) {
+    const user = (req as any).user;
+    logActivity({ req, usuarioId: user?.id, usuarioNombre: user?.nombre, usuarioRol: user?.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Error al crear pedido: ${error.message}` });
     console.error('Error creating monthly order:', error);
     res.status(500).json({ message: "Internal server error" });
   }
@@ -93,6 +103,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 
     // Solo el creador, compras o jefe pueden editar
     if ((order as any).createdBy !== user.id && user.rol !== 'jefe' && user.rol !== 'compras') {
+      logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Sin permiso para editar pedido ${(order as any).folio}` });
       return res.status(403).json({ error: 'No tienes permisos para editar este pedido' });
     }
 
@@ -102,73 +113,54 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     if (notas) (order as any).notas = notas;
 
     await order.save();
+
+    logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_EDITADO', entidad: 'pedido_mensual', detalle: `Folio: ${(order as any).folio} | Campos editados: ${[items && 'items', estado && 'estado', notas && 'notas'].filter(Boolean).join(', ')}` });
+
     res.json({ success: true, data: order });
   } catch (error: any) {
+    const user = (req as any).user;
+    logActivity({ req, usuarioId: user?.id, usuarioNombre: user?.nombre, usuarioRol: user?.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Error al editar pedido ID ${req.params.id}: ${error.message}` });
     console.error('Error updating monthly order:', error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// Confirmar completado (doble confirmación: compras + estacion)
+// Confirmar pedido (doble confirmación: estacion + compras)
 router.patch('/:id/confirmar', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const order = await MonthlyOrder.findByPk(req.params.id);
-
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
 
     if (user.rol === 'estacion') {
-      // Estacion solo puede confirmar sus propios pedidos
       const orderEstacion = (order as any).estacion;
       if (orderEstacion !== user.estacion && orderEstacion !== user.nombre) {
+        logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Sin permiso para confirmar pedido ${(order as any).folio} (estación no coincide)` });
         return res.status(403).json({ error: 'No autorizado' });
       }
       (order as any).confirmadoEstacion = true;
     } else if (['compras', 'jefe'].includes(user.rol)) {
       (order as any).confirmadoCompras = true;
     } else {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
-
-    // Si ambos confirmaron → completado
-    if ((order as any).confirmadoCompras && (order as any).confirmadoEstacion) {
-      (order as any).estado = 'completado';
-    }
-
-    await order.save();
-    res.json({ success: true, data: order });
-  } catch (error: any) {
-    console.error('Error confirming monthly order:', error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// PATCH - Confirmar completado (compras o estacion)
-router.patch('/:id/confirmar', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
-    const order = await MonthlyOrder.findByPk(req.params.id);
-    if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
-
-    if (user.rol === 'estacion') {
-      (order as any).confirmadoEstacion = true;
-    } else if (['compras', 'jefe'].includes(user.rol)) {
-      (order as any).confirmadoCompras = true;
-    } else {
+      logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Rol "${user.rol}" no autorizado para confirmar pedidos` });
       return res.status(403).json({ error: 'No tienes permisos' });
     }
 
-    // If both confirmed, set estado to completado
+    // Si ambos confirmaron → completado, si no → enviado
     if ((order as any).confirmadoEstacion && (order as any).confirmadoCompras) {
       (order as any).estado = 'completado';
     } else if ((order as any).estado === 'borrador') {
-      // At least one confirmed → mark as enviado
       (order as any).estado = 'enviado';
     }
 
     await order.save();
+
+    logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_CONFIRMADO', entidad: 'pedido_mensual', detalle: `Folio: ${(order as any).folio} | Confirmado por: ${user.rol} | Estado: ${(order as any).estado}` });
+
     res.json({ success: true, data: order });
   } catch (error: any) {
+    const user = (req as any).user;
+    logActivity({ req, usuarioId: user?.id, usuarioNombre: user?.nombre, usuarioRol: user?.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Error al confirmar pedido ID ${req.params.id}: ${error.message}` });
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -185,12 +177,20 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
 
     // Solo el creador o jefe pueden eliminar
     if ((order as any).createdBy !== user.id && user.rol !== 'jefe') {
+      logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Sin permiso para eliminar pedido ${(order as any).folio}` });
       return res.status(403).json({ error: 'No tienes permisos para eliminar este pedido' });
     }
 
+    const folio = (order as any).folio;
+    const tipo = (order as any).tipo;
     await order.destroy();
+
+    logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ELIMINADO', entidad: 'pedido_mensual', detalle: `Folio: ${folio} | Tipo: ${tipo}` });
+
     res.json({ success: true, message: 'Pedido eliminado' });
   } catch (error: any) {
+    const user = (req as any).user;
+    logActivity({ req, usuarioId: user?.id, usuarioNombre: user?.nombre, usuarioRol: user?.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Error al eliminar pedido ID ${req.params.id}: ${error.message}` });
     console.error('Error deleting monthly order:', error);
     res.status(500).json({ message: "Internal server error" });
   }
