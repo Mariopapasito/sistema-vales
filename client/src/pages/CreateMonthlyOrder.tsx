@@ -29,10 +29,20 @@ export default function CreateMonthlyOrder() {
   const { user } = useSelector((state: RootState) => state.auth);
   const tipo = location.state?.tipo as keyof typeof typeConfig | undefined;
 
-  const [items, setItems] = useState<Item[]>(Array(25).fill(null).map(() => ({
+  const [items, setItems] = useState<Item[]>(Array(10).fill(null).map(() => ({
     descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0
   })));
   const [loading, setLoading] = useState(false);
+
+  const addRows = (n = 5) => {
+    setItems(prev => [...prev, ...Array(n).fill(null).map(() => ({
+      descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0
+    }))]);
+  };
+
+  const removeRow = (index: number) => {
+    setItems(prev => prev.filter((_, i) => i !== index));
+  };
 
   const cfg = tipo ? typeConfig[tipo] : typeConfig['aceites'];
 
@@ -208,6 +218,7 @@ export default function CreateMonthlyOrder() {
                     <th>Existencias</th>
                     <th>Unidad</th>
                     <th className="center">Cantidad</th>
+                    <th className="center">—</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -232,10 +243,32 @@ export default function CreateMonthlyOrder() {
                       <td className="center">
                         <input type="number" min="0" value={item.cantidad || ''} onChange={e => handleChange(i, 'cantidad', e.target.value)} placeholder="0" />
                       </td>
+                      <td className="center">
+                        <button
+                          type="button"
+                          onClick={() => removeRow(i)}
+                          disabled={items.length <= 1}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '1rem', padding: '0 4px', opacity: items.length <= 1 ? 0.3 : 1 }}
+                          title="Eliminar fila"
+                        >✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Agregar filas */}
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem 0', flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => addRows(5)} style={{ padding: '0.45rem 1rem', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: '#334155', fontWeight: '600' }}>
+                + 5 filas
+              </button>
+              <button type="button" onClick={() => addRows(10)} style={{ padding: '0.45rem 1rem', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: '#334155', fontWeight: '600' }}>
+                + 10 filas
+              </button>
+              <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: '#94a3b8', alignSelf: 'center' }}>
+                {items.length} filas totales
+              </span>
             </div>
 
             {/* Signature */}
