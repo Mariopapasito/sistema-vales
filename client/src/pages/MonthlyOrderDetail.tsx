@@ -341,13 +341,13 @@ export default function MonthlyOrderDetail() {
                     <ArrowLeftIcon style={{ width: 16, height: 16 }} />
                     Volver
                   </button>
-                  {['compras', 'jefe', 'sistemas'].includes(user?.rol || '') && (
+                  {['compras', 'jefe'].includes(user?.rol || '') && (
                     <button className="btn-glass-cancel" onClick={downloadAsExcel}>
                       <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
                       Descargar Excel
                     </button>
                   )}
-                  {['compras', 'jefe', 'sistemas'].includes(user?.rol || '') && (
+                  {['compras', 'jefe'].includes(user?.rol || '') && (
                     <button className="btn-glass-cancel" onClick={downloadAsPDF}>
                       <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
                       Descargar PDF
