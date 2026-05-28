@@ -52,7 +52,7 @@ router.get('/history', protect, canAccessCalendar, async (req, res) => {
       if (!grouped[key]) {
         const end = new Date(start);
         end.setDate(start.getDate() + 6);
-        const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
         grouped[key] = {
           weekLabel: `${start.getDate()} – ${end.getDate()} de ${months[end.getMonth()]} ${end.getFullYear()}`,
           weekStart: key,

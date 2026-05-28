@@ -68,9 +68,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<'sistemas' | 'compras' | 'todos'>(
-    user?.rol === 'sistemas' ? 'sistemas' : 'todos'
-  );
+  const [selectedTab, setSelectedTab] = useState<'sistemas' | 'compras' | 'todos'>('todos');
   const [historialOpen, setHistorialOpen] = useState(false);
   const [selectedHistorial, setSelectedHistorial] = useState<any[] | undefined>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -149,12 +147,7 @@ export const Dashboard: React.FC = () => {
     }
   }, [debouncedFilters, currentPage]);
 
-  useEffect(() => {
-    fetchOrders();
-    // Auto-refresh every 30 seconds to show new orders without reload
-    const interval = setInterval(() => fetchOrders(), 30000);
-    return () => clearInterval(interval);
-  }, [fetchOrders]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const updateOrderState = async (orderId: number, newState: string, firma?: string | null) => {
     try {
@@ -219,8 +212,8 @@ export const Dashboard: React.FC = () => {
   }
 
   const sin_iniciar = useMemo(() => displayedOrders.filter(o => o.estado === 'Sin iniciar'), [displayedOrders]);
-  const en_proceso = useMemo(() => displayedOrders.filter(o => o.estado === 'En proceso'), [displayedOrders]);
-  const completadas = useMemo(() => displayedOrders.filter(o => o.estado === 'Completada'), [displayedOrders]);
+  const en_proceso  = useMemo(() => displayedOrders.filter(o => o.estado === 'En proceso'),  [displayedOrders]);
+  const completadas = useMemo(() => displayedOrders.filter(o => o.estado === 'Completada'),  [displayedOrders]);
 
   const pendingMyConfirmation = orders.filter(o => {
     if (o.estado !== 'Completada') return false;
@@ -393,16 +386,14 @@ export const Dashboard: React.FC = () => {
           {/* Tabs para Jefe y Estación */}
           {showTabs && (
             <div className="tabs-container">
-              {user?.rol !== 'sistemas' && (
-                <button onClick={() => setSelectedTab('todos')} className={`tab ${selectedTab === 'todos' ? 'active' : ''}`}>
-                  <QueueListIcon style={{ width: 16, height: 16 }} /> Todas ({orders.length})
-                </button>
-              )}
+              <button onClick={() => setSelectedTab('todos')} className={`tab ${selectedTab === 'todos' ? 'active' : ''}`}>
+                <QueueListIcon style={{ width: 16, height: 16 }} /> Todas ({orders.length})
+              </button>
               <button onClick={() => setSelectedTab('sistemas')} className={`tab ${selectedTab === 'sistemas' ? 'active' : ''}`}>
-                <Cog6ToothIcon style={{ width: 16, height: 16 }} /> {user?.rol === 'sistemas' ? 'Vales de Estaciones' : 'Sistemas'} ({orders.filter(o => o.tipo === 'sistemas').length})
+                <Cog6ToothIcon style={{ width: 16, height: 16 }} /> Sistemas ({orders.filter(o => o.tipo === 'sistemas').length})
               </button>
               <button onClick={() => setSelectedTab('compras')} className={`tab ${selectedTab === 'compras' ? 'active' : ''}`}>
-                <ShoppingCartIcon style={{ width: 16, height: 16 }} /> {user?.rol === 'sistemas' ? 'Mis pedidos a Compras' : 'Compras'} ({orders.filter(o => o.tipo === 'compras').length})
+                <ShoppingCartIcon style={{ width: 16, height: 16 }} /> Compras ({orders.filter(o => o.tipo === 'compras').length})
               </button>
             </div>
           )}
@@ -490,6 +481,6 @@ export const Dashboard: React.FC = () => {
       )}
     </div>
   );
-};
+};                                 
 
 export default Dashboard;

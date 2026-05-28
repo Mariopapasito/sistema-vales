@@ -3,8 +3,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
-import {
-  ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, XMarkIcon, Bars3Icon,
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, XMarkIcon, Bars3Icon,
 } from '@heroicons/react/24/outline';
 import '../styles/Calendar.css';
 
@@ -29,10 +28,10 @@ interface ValeItem {
 }
 
 const CATEGORIES = [
-  { key: 'mtto-prev', label: 'MTTO PREV', color: '#f59e0b', bg: '#fef3c7' },
-  { key: 'correctivo', label: 'Mtto Correctivo', color: '#ef4444', bg: '#fee2e2' },
+  { key: 'mtto-prev',   label: 'MTTO PREV',            color: '#f59e0b', bg: '#fef3c7' },
+  { key: 'correctivo',  label: 'Mtto Correctivo',       color: '#ef4444', bg: '#fee2e2' },
   { key: 'actividades', label: 'Actividades la Villita', color: '#22c55e', bg: '#dcfce7' },
-  { key: 'general', label: 'General', color: '#3b82f6', bg: '#dbeafe' },
+  { key: 'general',     label: 'General',               color: '#3b82f6', bg: '#dbeafe' },
 ];
 
 const PRIORIDAD_COLOR: Record<string, string> = {
@@ -40,7 +39,7 @@ const PRIORIDAD_COLOR: Record<string, string> = {
 };
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const MAX_PER_DAY = 6;
 
 function getWeekStart(date: Date): Date {
@@ -279,8 +278,8 @@ export const Calendar: React.FC = () => {
     <div className="dashboard-layout">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="dashboard-main">
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="mobile-menu-btn"
@@ -298,8 +297,8 @@ export const Calendar: React.FC = () => {
           >
             <Bars3Icon style={{ width: '20px', height: '20px' }} />
           </button>
-        </div>
-        <div className="dashboard-container cal-container">
+          </div>
+<div className="dashboard-container cal-container">
 
           {/* Top bar */}
           <div className="cal-top-bar">
@@ -307,147 +306,147 @@ export const Calendar: React.FC = () => {
           </div>
 
           <>
-            {/* Week nav */}
-            <div className="cal-week-row">
-              <div className="cal-week-nav">
-                <button className="cal-nav-btn" onClick={goToPrevWeek} title="Semana anterior">
-                  <ChevronLeftIcon style={{ width: 18, height: 18 }} />
-                </button>
-                <span className="cal-week-label">{weekLabel}</span>
-                <button className="cal-nav-btn" onClick={goToNextWeek} title="Semana siguiente">
-                  <ChevronRightIcon style={{ width: 18, height: 18 }} />
-                </button>
-                {!isCurrentWeek && (
-                  <button className="cal-nav-btn cal-nav-btn--today" onClick={goToCurrentWeek}>
-                    Hoy
+              {/* Week nav */}
+              <div className="cal-week-row">
+                <div className="cal-week-nav">
+                  <button className="cal-nav-btn" onClick={goToPrevWeek} title="Semana anterior">
+                    <ChevronLeftIcon style={{ width: 18, height: 18 }} />
                   </button>
-                )}
-              </div>
+                  <span className="cal-week-label">{weekLabel}</span>
+                  <button className="cal-nav-btn" onClick={goToNextWeek} title="Semana siguiente">
+                    <ChevronRightIcon style={{ width: 18, height: 18 }} />
+                  </button>
+                  {!isCurrentWeek && (
+                    <button className="cal-nav-btn cal-nav-btn--today" onClick={goToCurrentWeek}>
+                      Hoy
+                    </button>
+                  )}
+                </div>
 
-              {/* Legend */}
-              <div className="cal-legend">
-                {CATEGORIES.map(cat => (
-                  <div key={cat.key} className="cal-legend-item">
-                    <span className="cal-legend-dot" style={{ background: cat.color }} />
-                    <span>{cat.label}</span>
+                {/* Legend */}
+                <div className="cal-legend">
+                  {CATEGORIES.map(cat => (
+                    <div key={cat.key} className="cal-legend-item">
+                      <span className="cal-legend-dot" style={{ background: cat.color }} />
+                      <span>{cat.label}</span>
+                    </div>
+                  ))}
+                  <div className="cal-legend-item cal-legend-sep">
+                    <span className="cal-legend-dot cal-legend-dot--vale" />
+                    <span>Vale asignado</span>
                   </div>
-                ))}
-                <div className="cal-legend-item cal-legend-sep">
-                  <span className="cal-legend-dot cal-legend-dot--vale" />
-                  <span>Vale asignado</span>
                 </div>
               </div>
-            </div>
 
-            {/* Weekly Grid */}
-            <div className="cal-grid">
-              {weekDays.map((day, i) => {
-                const isSunday = i === 6;
-                const isToday = toDateStr(day) === today;
-                const dateStr = toDateStr(day);
-                const calItems = getCalendarEventsForDay(day);
-                const valeItems = getValesForDay(day);
-                const total = calItems.length + valeItems.length;
-                const isFull = total >= MAX_PER_DAY;
-                const isDragTarget = dragOverDate === dateStr && !isSunday;
+              {/* Weekly Grid */}
+              <div className="cal-grid">
+                {weekDays.map((day, i) => {
+                  const isSunday = i === 6;
+                  const isToday = toDateStr(day) === today;
+                  const dateStr = toDateStr(day);
+                  const calItems = getCalendarEventsForDay(day);
+                  const valeItems = getValesForDay(day);
+                  const total = calItems.length + valeItems.length;
+                  const isFull = total >= MAX_PER_DAY;
+                  const isDragTarget = dragOverDate === dateStr && !isSunday;
 
-                return (
-                  <div
-                    key={i}
-                    className={['cal-col', isToday ? 'cal-col--today' : '', isSunday ? 'cal-col--sunday' : '', isDragTarget ? 'cal-col--dragover' : ''].filter(Boolean).join(' ')}
-                    onDragOver={(e) => !isSunday && handleDragOver(e, dateStr)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => !isSunday && handleDrop(e, day)}
-                    onClick={() => !isSunday && handleDayClick(day)}
-                  >
-                    <div className={['cal-day-header', isToday ? 'cal-day-header--today' : '', isSunday ? 'cal-day-header--sunday' : ''].filter(Boolean).join(' ')}>
-                      <span className="cal-day-num">{day.getDate()}</span>
-                      <span className="cal-day-name">{DAY_NAMES[i]} · {MONTH_NAMES[day.getMonth()]}</span>
-                      {isSunday && <span className="cal-day-badge">No laboral</span>}
-                      {isFull && !isSunday && <span className="cal-day-badge cal-day-badge--full">{total}/{MAX_PER_DAY}</span>}
-                    </div>
+                  return (
+                    <div
+                      key={i}
+                      className={['cal-col', isToday ? 'cal-col--today' : '', isSunday ? 'cal-col--sunday' : '', isDragTarget ? 'cal-col--dragover' : ''].filter(Boolean).join(' ')}
+                      onDragOver={(e) => !isSunday && handleDragOver(e, dateStr)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => !isSunday && handleDrop(e, day)}
+                      onClick={() => !isSunday && handleDayClick(day)}
+                    >
+                      <div className={['cal-day-header', isToday ? 'cal-day-header--today' : '', isSunday ? 'cal-day-header--sunday' : ''].filter(Boolean).join(' ')}>
+                        <span className="cal-day-num">{day.getDate()}</span>
+                        <span className="cal-day-name">{DAY_NAMES[i]} · {MONTH_NAMES[day.getMonth()]}</span>
+                        {isSunday && <span className="cal-day-badge">No laboral</span>}
+                        {isFull && !isSunday && <span className="cal-day-badge cal-day-badge--full">{total}/{MAX_PER_DAY}</span>}
+                      </div>
 
-                    <div className="cal-tasks">
-                      {calItems.map(ev => {
-                        const isDone = ev.completed || ev.completado;
-                        return (
-                          <div
-                            key={`ev-${ev.id}`}
-                            className={['cal-task', isDone ? 'cal-task--done' : ''].filter(Boolean).join(' ')}
-                            style={getCatStyle(ev)}
-                            draggable={canEdit}
-                            onDragStart={(e) => canEdit && handleDragStart(e, ev.id)}
-                            onDragEnd={handleDragEnd}
-                            onClick={(e) => handleEventClick(ev, e)}
-                          >
-                            <div className="cal-task-row">
-                              {canEdit && (
-                                <input
-                                  type="checkbox"
-                                  className="cal-task-check"
-                                  checked={!!isDone}
-                                  readOnly
-                                  onClick={(e) => { e.stopPropagation(); handleToggle(ev, e as any); }}
-                                />
-                              )}
-                              <span className="cal-task-text">{ev.titulo}</span>
-                              {canEdit && (
-                                <button className="cal-task-del" onClick={(e) => handleDelete(ev.id, e)}>
-                                  <TrashIcon style={{ width: 12, height: 12 }} />
-                                </button>
-                              )}
+                      <div className="cal-tasks">
+                        {calItems.map(ev => {
+                          const isDone = ev.completed || ev.completado;
+                          return (
+                            <div
+                              key={`ev-${ev.id}`}
+                              className={['cal-task', isDone ? 'cal-task--done' : ''].filter(Boolean).join(' ')}
+                              style={getCatStyle(ev)}
+                              draggable={canEdit}
+                              onDragStart={(e) => canEdit && handleDragStart(e, ev.id)}
+                              onDragEnd={handleDragEnd}
+                              onClick={(e) => handleEventClick(ev, e)}
+                            >
+                              <div className="cal-task-row">
+                                {canEdit && (
+                                  <input
+                                    type="checkbox"
+                                    className="cal-task-check"
+                                    checked={!!isDone}
+                                    readOnly
+                                    onClick={(e) => { e.stopPropagation(); handleToggle(ev, e as any); }}
+                                  />
+                                )}
+                                <span className="cal-task-text">{ev.titulo}</span>
+                                {canEdit && (
+                                  <button className="cal-task-del" onClick={(e) => handleDelete(ev.id, e)}>
+                                    <TrashIcon style={{ width: 12, height: 12 }} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
 
-                      {valeItems.map(vale => {
-                        const isDone = vale.estado === 'Completada';
-                        return (
-                          <div
-                            key={`vale-${vale.id}`}
-                            className={['cal-task', 'cal-task--vale', isDone ? 'cal-task--done' : ''].filter(Boolean).join(' ')}
-                            style={{ borderColor: PRIORIDAD_COLOR[vale.prioridad] || '#64748b', borderLeftColor: PRIORIDAD_COLOR[vale.prioridad] || '#64748b', background: '#faf5ff' }}
-                            title={`${vale.folio} — ${vale.descripcion}`}
-                          >
-                            <div className="cal-task-row">
-                              {canEdit && (
-                                <input
-                                  type="checkbox"
-                                  className="cal-task-check"
-                                  checked={!!isDone}
-                                  readOnly
-                                  onClick={(e) => { e.stopPropagation(); handleToggleVale(vale, e as any); }}
-                                />
-                              )}
-                              <span className="cal-task-badge" style={{ background: PRIORIDAD_COLOR[vale.prioridad] || '#64748b' }}>
-                                {vale.folio}
-                              </span>
-                              <span className="cal-task-text">{vale.descripcion}</span>
-                              {canEdit && (
-                                <span title="Las órdenes se gestionan desde el panel principal" style={{ fontSize: '0.7rem', color: '#94a3b8', marginLeft: 'auto', cursor: 'default' }}>
-                                  ver panel
+                        {valeItems.map(vale => {
+                          const isDone = vale.estado === 'Completada';
+                          return (
+                            <div
+                              key={`vale-${vale.id}`}
+                              className={['cal-task', 'cal-task--vale', isDone ? 'cal-task--done' : ''].filter(Boolean).join(' ')}
+                              style={{ borderColor: PRIORIDAD_COLOR[vale.prioridad] || '#64748b', borderLeftColor: PRIORIDAD_COLOR[vale.prioridad] || '#64748b', background: '#faf5ff' }}
+                              title={`${vale.folio} — ${vale.descripcion}`}
+                            >
+                              <div className="cal-task-row">
+                                {canEdit && (
+                                  <input
+                                    type="checkbox"
+                                    className="cal-task-check"
+                                    checked={!!isDone}
+                                    readOnly
+                                    onClick={(e) => { e.stopPropagation(); handleToggleVale(vale, e as any); }}
+                                  />
+                                )}
+                                <span className="cal-task-badge" style={{ background: PRIORIDAD_COLOR[vale.prioridad] || '#64748b' }}>
+                                  {vale.folio}
                                 </span>
-                              )}
+                                <span className="cal-task-text">{vale.descripcion}</span>
+                                {canEdit && (
+                                  <span title="Las órdenes se gestionan desde el panel principal" style={{ fontSize: '0.7rem', color: '#94a3b8', marginLeft: 'auto', cursor: 'default' }}>
+                                    ver panel
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
 
-                      {canEdit && !isSunday && !isFull && (
-                        <button className="cal-add-task" onClick={(e) => { e.stopPropagation(); handleDayClick(day); }}>
-                          <PlusIcon style={{ width: 12, height: 12 }} /> Agregar
-                        </button>
-                      )}
-                      {isFull && !isSunday && <div className="cal-day-full-msg">Máx. {MAX_PER_DAY} actividades</div>}
+                        {canEdit && !isSunday && !isFull && (
+                          <button className="cal-add-task" onClick={(e) => { e.stopPropagation(); handleDayClick(day); }}>
+                            <PlusIcon style={{ width: 12, height: 12 }} /> Agregar
+                          </button>
+                        )}
+                        {isFull && !isSunday && <div className="cal-day-full-msg">Máx. {MAX_PER_DAY} actividades</div>}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
+                  );
+                })}
+              </div>
+            </>
 
-        </div>
+          </div>
       </main>
 
       {showModal && (
