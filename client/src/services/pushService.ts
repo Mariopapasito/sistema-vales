@@ -23,7 +23,13 @@ export const subscribeToPushNotifications = async () => {
   try {
     const token = localStorage.getItem('accessToken');
     if (!token || !VAPID_PUBLIC_KEY) return;
-    if (Notification.permission !== 'granted') return;
+
+    // Request permission if not yet decided
+    if (Notification.permission === 'denied') return;
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+    }
 
     const registration = await navigator.serviceWorker.ready;
     const existingSubscription = await registration.pushManager.getSubscription();

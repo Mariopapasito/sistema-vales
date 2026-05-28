@@ -26,6 +26,7 @@ export default function App() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
 
+  // Restore session and register service worker once on mount
   useEffect(() => {
     dispatch(restoreSession());
     const token = localStorage.getItem('accessToken');
@@ -33,8 +34,14 @@ export default function App() {
       scheduleTokenRefresh(token);
     }
     registerServiceWorker();
-    subscribeToPushNotifications();
   }, [dispatch]);
+
+  // Re-subscribe to push every time the user logs in (accessToken appears)
+  useEffect(() => {
+    if (accessToken) {
+      subscribeToPushNotifications();
+    }
+  }, [accessToken]);
 
   return (
     <>
