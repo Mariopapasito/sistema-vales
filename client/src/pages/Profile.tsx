@@ -1,16 +1,14 @@
 import { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import Sidebar from '../components/Sidebar';
 import { RootState } from '../store';
 import api from '../services/api';
 import { updateUser } from '../store/slices/authSlice';
 import {
-  UserCircleIcon, CameraIcon, ArrowPathIcon, CheckIcon, CheckCircleIcon, Bars3Icon,
+  UserCircleIcon, CameraIcon, ArrowPathIcon, CheckIcon, CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/Profile.css';
 
 export default function Profile() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
@@ -95,29 +93,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="profile-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="profile-main">
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-        </div>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1.75rem 2rem', flex: 1 }}>
         <div className="profile-container">
           <div className="profile-header">
             <h1><UserCircleIcon style={{ width: 28, height: 28 }} /> Mi Perfil</h1>
@@ -194,7 +170,6 @@ export default function Profile() {
             </form>
           </div>
         </div>
-      </main>
     </div>
   );
 }

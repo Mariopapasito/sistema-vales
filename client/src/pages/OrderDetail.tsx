@@ -3,7 +3,6 @@ import '../styles/OrderDetail.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import api from '../services/api';
-import Sidebar from '../components/Sidebar';
 import ReportTemplate from '../components/ReportTemplate';
 import OrderComments from '../components/OrderComments';
 import { logout } from '../store/slices/authSlice';
@@ -17,7 +16,6 @@ import {
   DocumentTextIcon,
   ArrowDownTrayIcon,
   ArrowRightOnRectangleIcon,
-  Bars3Icon,
 } from '@heroicons/react/24/outline';
 
 interface WorkReport {
@@ -70,7 +68,6 @@ export const OrderDetail: React.FC = () => {
   const [expandedDoc, setExpandedDoc] = useState<'vale' | 'report' | null>(null);
   const [isEditingVale, setIsEditingVale] = useState(false);
   const [editedOrder, setEditedOrder] = useState<Order | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Get API base URL
   const getApiBaseURL = () => {
@@ -223,23 +220,17 @@ export const OrderDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex' }}>
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={{ flex: 1, padding: '2rem', color: '#64748b' }}>
-          <ArrowPathIcon style={{ width: 20, height: 20 }} /> Cargando vale...
-        </main>
-      </div>
+      <main style={{ flex: 1, padding: '2rem', color: '#64748b' }}>
+        <ArrowPathIcon style={{ width: 20, height: 20 }} /> Cargando vale...
+      </main>
     );
   }
 
   if (!order) {
     return (
-      <div style={{ display: 'flex' }}>
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={{ flex: 1, padding: '2rem', color: '#ef4444' }}>
-          <XCircleIcon style={{ width: 20, height: 20 }} /> Vale no encontrado
-        </main>
-      </div>
+      <main style={{ flex: 1, padding: '2rem', color: '#ef4444' }}>
+        <XCircleIcon style={{ width: 20, height: 20 }} /> Vale no encontrado
+      </main>
     );
   }
 
@@ -308,28 +299,8 @@ export const OrderDetail: React.FC = () => {
   };
 
   return (
-    <div className="order-detail-page" style={{ display: 'flex', height: '100vh', backgroundColor: '#f8fafc' }}>
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem 2rem', width: '100%' }}>
+    <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem 2rem', width: '100%' }}>
         <div  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
           <button
             onClick={() => navigate('/dashboard')}
             style={{
@@ -952,7 +923,6 @@ export const OrderDetail: React.FC = () => {
           }
         `}</style>
       </main>
-    </div>
   );
 };
 

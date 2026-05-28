@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import Sidebar from '../components/Sidebar';
 import NotificationCenter from '../components/NotificationCenter';
 import SearchFilters, { FilterValues } from '../components/SearchFilters';
 import { exportToExcel, exportToPDF } from '../utils/exportOrders';
@@ -25,7 +24,6 @@ import {
   QueueListIcon,
   BellAlertIcon,
   HandThumbUpIcon,
-  Bars3Icon,
 } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 import '../styles/Notifications.css';
@@ -71,7 +69,6 @@ export const Dashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'sistemas' | 'compras' | 'todos'>('todos');
   const [historialOpen, setHistorialOpen] = useState(false);
   const [selectedHistorial, setSelectedHistorial] = useState<any[] | undefined>();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filters, setFilters] = useState<FilterValues>(emptyFilters);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -295,34 +292,18 @@ export const Dashboard: React.FC = () => {
     );
   };
 
-  const sidebar = <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />;
-  const menuBtn = (
-    <div className="dashboard-header-mobile">
-      <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title="Abrir menú">
-        <Bars3Icon style={{ width: 24, height: 24 }} />
-      </button>
-    </div>
-  );
-
   if (loading) return (
-    <div className="dashboard-layout">
-      {sidebar}
-      <main className="dashboard-main">
-        {menuBtn}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#64748b', fontSize: '1.2rem', gap: '0.5rem' }}>
-          <ArrowPathIcon style={{ width: 20, height: 20 }} /> Cargando órdenes...
-        </div>
-      </main>
-    </div>
+    <main className="dashboard-main">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#64748b', fontSize: '1.2rem', gap: '0.5rem' }}>
+        <ArrowPathIcon style={{ width: 20, height: 20 }} /> Cargando órdenes...
+      </div>
+    </main>
   );
 
   return (
-    <div className="dashboard-layout">
-      {sidebar}
-      <main className="dashboard-main">
-        {menuBtn}
-        <NotificationCenter />
-        <div className="dashboard-container">
+    <main className="dashboard-main">
+      <NotificationCenter />
+      <div className="dashboard-container">
           <div className="dashboard-header">
             <div>
               <h1><ClipboardDocumentListIcon style={{ width: 28, height: 28 }} /> Órdenes de Trabajo</h1>
@@ -466,7 +447,6 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
-      </main>
 
       {historialOpen && (
         <OrderHistory historial={selectedHistorial} onClose={() => setHistorialOpen(false)} />
@@ -479,7 +459,7 @@ export const Dashboard: React.FC = () => {
           onCancel={() => setSigPending(null)}
         />
       )}
-    </div>
+    </main>
   );
 };                                 
 

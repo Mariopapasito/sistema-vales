@@ -1,11 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import {
   ClipboardDocumentListIcon,
-  Bars3Icon,
   FunnelIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -58,7 +56,6 @@ function formatDate(iso: string) {
 
 export default function ActivityLogs() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -110,15 +107,7 @@ export default function ActivityLogs() {
   }
 
   return (
-    <div className="logs-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="logs-main">
-        {/* Mobile menu button */}
-        <button className="dashboard-menu-btn lg:hidden" onClick={() => setSidebarOpen(true)}>
-          <Bars3Icon className="h-6 w-6" />
-        </button>
-
-        <div className="logs-container">
+    <div className="logs-container">
           <div className="logs-header">
             <div>
               <h1><ClipboardDocumentListIcon style={{ width: 28, height: 28 }} /> Logs de Actividad</h1>
@@ -224,7 +213,5 @@ export default function ActivityLogs() {
             </div>
           )}
         </div>
-      </main>
-    </div>
   );
 }

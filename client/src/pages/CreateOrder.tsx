@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
-import Sidebar from '../components/Sidebar';
-import { Bars3Icon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 
 const ESTACIONES = [
@@ -14,7 +13,6 @@ const ESTACIONES = [
 
 export const CreateOrder: React.FC = () => {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
   const [formData, setFormData] = useState({
     prioridad: 'Baja',
@@ -78,28 +76,6 @@ export const CreateOrder: React.FC = () => {
   };
 
   return (
-    <div className="dashboard-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="dashboard-main">
-        
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-          </div>
 <div className="dashboard-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '2rem' }}>
           <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">Nueva Orden de Trabajo</h1>
@@ -251,8 +227,6 @@ export const CreateOrder: React.FC = () => {
         </form>
           </div>
         </div>
-      </main>
-    </div>
   );
 };
 

@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
-import Sidebar from '../components/Sidebar';
-import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, PencilSquareIcon, CheckIcon, XMarkIcon, CheckCircleIcon, BellAlertIcon, HandThumbUpIcon, ArrowDownTrayIcon, Bars3Icon,
+import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, PencilSquareIcon, CheckIcon, XMarkIcon, CheckCircleIcon, BellAlertIcon, HandThumbUpIcon, ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import OrderComments from '../components/OrderComments';
 import * as XLSX from 'xlsx';
@@ -40,7 +39,6 @@ const typeConfig = {
 };
 
 export default function MonthlyOrderDetail() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -140,43 +138,11 @@ export default function MonthlyOrderDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="loading-glass">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <span>Cargando pedido...</span>
-      </div>
-    );
+    return <span>Cargando pedido...</span>;
   }
 
   if (!order) {
-    return (
-      <div className="dashboard-layout">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="dashboard-main">
-          
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-          </div>
-<p style={{ color: 'white' }}>Pedido no encontrado</p>
-        </main>
-      </div>
-    );
+    return <p>Pedido no encontrado</p>;
   }
 
   const cfg = typeConfig[order.tipo];
@@ -196,10 +162,7 @@ export default function MonthlyOrderDetail() {
     (user?.rol === 'estacion' || user?.rol === 'compras' || user?.rol === 'jefe');
 
   return (
-    <div className="dashboard-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="dashboard-main">
-        <div className="dashboard-container">
+    <div className="dashboard-container">
           <button className="btn-back" onClick={() => navigate('/monthly-orders')}>
             <ArrowLeftIcon style={{ width: 16, height: 16 }} />
             Regresar
@@ -351,7 +314,5 @@ export default function MonthlyOrderDetail() {
             <OrderComments orderId={parseInt(order.id)} basePath="monthly-orders" />
           </div>
         </div>
-      </main>
-    </div>
   );
 }

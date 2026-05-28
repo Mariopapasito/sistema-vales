@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import { 
   PlusCircleIcon, 
@@ -13,7 +12,6 @@ import {
   ArrowDownTrayIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  Bars3Icon,
   ClipboardDocumentListIcon,
   ShoppingCartIcon,
 } from '@heroicons/react/24/outline';
@@ -44,7 +42,6 @@ interface Report {
 
 export const Reports: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -389,65 +386,18 @@ export const Reports: React.FC = () => {
 
   if (!canView) {
     return (
-      <div className="dashboard-layout">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="dashboard-main">
-          
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-          </div>
-<div className="dashboard-container">
-            <p>No tienes permisos.</p>
-          </div>
-        </main>
+      <div className="dashboard-container">
+        <p>No tienes permisos.</p>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="dashboard-main">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-        </div>
-        <div className="dashboard-container">
-          <div className="page-header">
-            <h1>Reportes</h1>
-            <p>Crea y gestiona reportes con imágenes</p>
-          </div>
+    <div className="dashboard-container">
+      <div className="page-header">
+        <h1>Reportes</h1>
+        <p>Crea y gestiona reportes con imágenes</p>
+      </div>
 
           {/* Botón para crear - solo si puede crear */}
           {canCreate && (
@@ -682,8 +632,6 @@ export const Reports: React.FC = () => {
               ))
             )}
           </div>
-        </div>
-      </main>
 
       {/* Preview Modal */}
       {showPreview && selectedReport && selectedReport.imagenes.length > 0 && (

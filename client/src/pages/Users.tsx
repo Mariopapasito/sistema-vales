@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import {
-  XCircleIcon, UserPlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, Bars3Icon,
+  XCircleIcon, UserPlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/Users.css';
 import '../styles/Dashboard.css';
 
 export default function Users() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useSelector((state: RootState) => state.auth);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,19 +101,9 @@ export default function Users() {
 
   if (user?.rol !== 'jefe' && user?.rol !== 'sistemas') {
     return (
-      <div className="users-layout">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="users-main">
-          <div className="dashboard-header-mobile">
-            <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <Bars3Icon style={{ width: 24, height: 24 }} />
-            </button>
-          </div>
-          <div className="access-denied">
-            <h2><XCircleIcon style={{ width: 24, height: 24 }} /> Acceso Denegado</h2>
-            <p>Solo Jefe y Sistemas pueden gestionar usuarios</p>
-          </div>
-        </main>
+      <div className="access-denied">
+        <h2><XCircleIcon style={{ width: 24, height: 24 }} /> Acceso Denegado</h2>
+        <p>Solo Jefe y Sistemas pueden gestionar usuarios</p>
       </div>
     );
   }
@@ -131,24 +119,16 @@ export default function Users() {
   };
 
   return (
-    <div className="users-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="users-main">
-        <div className="dashboard-header-mobile">
-          <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <Bars3Icon style={{ width: 24, height: 24 }} />
-          </button>
+    <div className="users-container">
+      <div className="users-header">
+        <div>
+          <h1>Gestión de Usuarios</h1>
+          <p className="subtitle">Crear y administrar usuarios del sistema</p>
         </div>
-        <div className="users-container">
-          <div className="users-header">
-            <div>
-              <h1>Gestión de Usuarios</h1>
-              <p className="subtitle">Crear y administrar usuarios del sistema</p>
-            </div>
-            <button className="btn-create-user" onClick={handleCreate}>
-              <UserPlusIcon style={{ width: 18, height: 18 }} /> Crear Usuario
-            </button>
-          </div>
+        <button className="btn-create-user" onClick={handleCreate}>
+          <UserPlusIcon style={{ width: 18, height: 18 }} /> Crear Usuario
+        </button>
+      </div>
 
           {loading ? (
             <div className="loading">Cargando usuarios...</div>
@@ -209,8 +189,6 @@ export default function Users() {
               ))}
             </div>
           )}
-        </div>
-      </main>
 
       {/* Modal de crear/editar usuario */}
       {showModal && (

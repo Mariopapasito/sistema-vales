@@ -3,8 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../store';
 import api from '../services/api';
-import Sidebar from '../components/Sidebar';
-import { PlusIcon, ChevronRightIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, Squares2X2Icon, HandThumbUpIcon, BellAlertIcon, ArrowDownTrayIcon, Bars3Icon,
+import { PlusIcon, ChevronRightIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, Squares2X2Icon, HandThumbUpIcon, BellAlertIcon, ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import * as XLSX from 'xlsx';
 import '../styles/MonthlyOrders.css';
@@ -163,14 +162,7 @@ export default function MonthlyOrders() {
   };
 
   if (loading) {
-    return (
-      <div className="dashboard-layout">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="dashboard-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span>Cargando pedidos...</span>
-        </main>
-      </div>
-    );
+    return <span>Cargando pedidos...</span>;
   }
 
   const filtered = selectedType === 'todos' ? orders : orders.filter(o => o.tipo === selectedType);
@@ -203,29 +195,6 @@ export default function MonthlyOrders() {
   };
 
   return (
-    <div className="dashboard-layout">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="dashboard-main">
-        
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mobile-menu-btn"
-            style={{
-              padding: '0.6rem 0.8rem',
-              background: '#0f172a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              display: 'none',
-            }}
-          >
-            <Bars3Icon style={{ width: '20px', height: '20px' }} />
-          </button>
-          </div>
 <div className="dashboard-container">
         <div className="monthly-orders-header">
           <div>
@@ -347,8 +316,6 @@ export default function MonthlyOrders() {
           );
         })}
         </div>
-      </main>
-    </div>
   );
 }
 
