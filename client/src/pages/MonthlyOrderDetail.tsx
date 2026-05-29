@@ -82,6 +82,15 @@ export default function MonthlyOrderDetail() {
     }
   };
 
+  const addRows = (n: number) => {
+    const blank: Item = { descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0 };
+    setEditItems(prev => [...prev, ...Array(n).fill(null).map(() => ({ ...blank }))]);
+  };
+
+  const removeRow = (index: number) => {
+    setEditItems(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleChange = (index: number, field: keyof Item, value: any) => {
     const next = [...editItems];
     next[index] = next[index] || { descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0 };
@@ -212,7 +221,8 @@ export default function MonthlyOrderDetail() {
   }
 
   const cfg = typeConfig[order.tipo];
-  const canEdit = user?.rol === 'compras' || user?.rol === 'jefe';
+  const canEdit = (user?.rol === 'compras' || user?.rol === 'jefe') ||
+    (user?.rol === 'estacion' && order.createdBy === user?.id && order.estado !== 'completado');
 
   const myConfirmation = user?.rol === 'estacion'
     ? order.confirmadoEstacion
@@ -283,6 +293,7 @@ export default function MonthlyOrderDetail() {
                     <th>Existencias</th>
                     <th>Unidad</th>
                     <th className="center">Cantidad</th>
+                    {isEditing && <th></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -319,11 +330,27 @@ export default function MonthlyOrderDetail() {
                           ? <input type="number" min="0" value={item.cantidad || ''} onChange={e => handleChange(i, 'cantidad', e.target.value)} placeholder="0" />
                           : <span>{item.cantidad > 0 ? item.cantidad : ''}</span>}
                       </td>
+                      {isEditing && (
+                        <td className="center">
+                          <button
+                            type="button"
+                            onClick={() => removeRow(i)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '1rem', padding: '0 4px' }}
+                            title="Eliminar fila"
+                          >✕</button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {isEditing && (
+              <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+                <button type="button" className="btn-glass-cancel" onClick={() => addRows(5)}>+ 5 filas</button>
+                <button type="button" className="btn-glass-cancel" onClick={() => addRows(10)}>+ 10 filas</button>
+              </div>
+            )}
 
             {/* Signature */}
             <div className="doc-signature">
