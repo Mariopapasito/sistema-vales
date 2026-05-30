@@ -212,9 +212,11 @@ export const OrderDetail: React.FC = () => {
 
   const handleSaveVale = async () => {
     if (!editedOrder) return;
+    // Use URL id as authoritative fallback in case editedOrder.id is missing
+    const orderId = editedOrder.id || id;
 
     try {
-      const response = await api.patch(`/orders/${editedOrder.id}`, {
+      const response = await api.patch(`/orders/${orderId}`, {
         prioridad: editedOrder.prioridad,
         localizacion: editedOrder.localizacion,
         descripcion: editedOrder.descripcion,
