@@ -98,7 +98,7 @@ const ReportTemplate: React.FC<ReportTemplateProps> = ({ workReport, order, onUp
         rating: getRatingDB(formData.rating)
       };
 
-      const response = await api.put(`/reports/${workReport.id}`, saveData);
+      const response = await api.put(`/work-reports/${workReport.id}`, saveData);
       if (onUpdate) {
         onUpdate(response.data.report || response.data);
       }
