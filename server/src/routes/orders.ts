@@ -12,7 +12,7 @@ import { logActivity } from '../utils/activityLogger';
 
 const router = express.Router();
 
-const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
+const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
 
 // GET /orders/conversations — recent orders with comments for global chat
 router.get('/conversations', protect, async (req: AuthRequest, res) => {
@@ -239,7 +239,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
     const userId = req.userId;
     const userEstacion = req.user?.estacion;
 
-    if (!['estacion', 'almacen', 'constructora', 'jefe', 'sistemas'].includes(userRole || ''))
+    if (!['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas'].includes(userRole || ''))
       return res.status(403).json({ message: 'Only Estacion, Jefe and Sistemas can create orders' });
 
     const { tipo, prioridad, descripcion, observaciones } = req.body;

@@ -178,7 +178,7 @@ export const Dashboard: React.FC = () => {
     setSigPending(null);
   };
 
-  const ESTACION_LIKE = ['estacion', 'almacen', 'constructora'];
+  const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
 
   const confirmarOrden = async (e: React.MouseEvent, orderId: number) => {
     e.stopPropagation();

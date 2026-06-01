@@ -108,7 +108,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           </div>
           <div className="user-info">
             <p className="user-name">{user?.nombre || 'Usuario'}</p>
-            <p className="user-role">{user?.rol === 'jefe' ? 'Jefe' : user?.rol === 'sistemas' ? 'Sistemas' : user?.rol === 'estacion' ? 'Estación' : user?.rol === 'almacen' ? 'Almacén' : user?.rol === 'constructora' ? 'Constructora' : 'Compras'}</p>
+            <p className="user-role">{user?.rol === 'jefe' ? 'Jefe' : user?.rol === 'sistemas' ? 'Sistemas' : user?.rol === 'estacion' ? 'Estación' : user?.rol === 'almacen' ? 'Almacén' : user?.rol === 'constructora' ? 'Constructora' : user?.rol === 'marketing' ? 'Marketing' : 'Compras'}</p>
             <p className="user-station">{user?.estacion || 'N/A'}</p>
           </div>
         </div>
@@ -129,8 +129,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="nav-text">Vales</span>
           </button>
 
-          {/* Create Order - Estacion + roles similares */}
-          {['estacion', 'almacen', 'constructora'].includes(user?.rol || '') && (
+          {/* Create Order - Estacion + roles similares + jefe + sistemas */}
+          {['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas'].includes(user?.rol || '') && (
             <button ref={refIfActive('/create-order')} onClick={() => handleNavClick('/create-order')} className={navClass('/create-order')}>
               <PlusCircleIcon className="nav-icon" />
               <span className="nav-text">Crear Vale</span>

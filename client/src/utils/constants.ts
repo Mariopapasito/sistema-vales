@@ -9,6 +9,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ESTACION]: 'Estación',
   [UserRole.ALMACEN]: 'Almacén',
   [UserRole.CONSTRUCTORA]: 'Constructora',
+  [UserRole.MARKETING]: 'Marketing',
 };
 
 // Order status labels

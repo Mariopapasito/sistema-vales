@@ -48,6 +48,7 @@ const rolColor: Record<string, string> = {
   compras: '#10b981',
   almacen: '#f59e0b',
   constructora: '#ec4899',
+  marketing: '#e74c3c',
 };
 
 const avatarBg = (nombre: string) => {

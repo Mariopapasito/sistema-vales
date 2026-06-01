@@ -166,7 +166,7 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
     await DirectMessage.sync({ force: false });
     // Ensure users.rol ENUM includes almacen and constructora
     await sequelize.query(`
-      ALTER TABLE users MODIFY COLUMN rol ENUM('jefe','sistemas','estacion','compras','almacen','constructora') NOT NULL DEFAULT 'estacion'
+      ALTER TABLE users MODIFY COLUMN rol ENUM('jefe','sistemas','estacion','compras','almacen','constructora','marketing') NOT NULL DEFAULT 'estacion'
     `).catch(() => { /* already up to date */ });
     // Ensure users.estacion allows NULL (for roles like jefe/sistemas that don't have a station)
     await sequelize.query(`
