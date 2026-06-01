@@ -176,6 +176,10 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
     await sequelize.query(`
       ALTER TABLE notifications MODIFY COLUMN tipo ENUM('NEW_ORDER','ORDER_STATUS_CHANGED','CALENDAR_EVENT','SYSTEM','MENTION','COMMENT') NOT NULL
     `).catch(() => { /* already up to date */ });
+    // Ensure monthly_orders.tipo ENUM includes toner and imprenta
+    await sequelize.query(`
+      ALTER TABLE monthly_orders MODIFY COLUMN tipo ENUM('aceites','papeleria','limpieza','toner','imprenta') NOT NULL
+    `).catch(() => { /* already up to date */ });
     // keep running — DB already up to date
   } catch (error) {
     console.error('[DB] Failed to sync database:', error);

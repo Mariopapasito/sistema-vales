@@ -14,7 +14,7 @@ const MonthlyOrder = sequelize.define('MonthlyOrder', {
     comment: 'Folio autogenerado'
   },
   tipo: {
-    type: DataTypes.ENUM('aceites', 'papeleria', 'limpieza'),
+    type: DataTypes.ENUM('aceites', 'papeleria', 'limpieza', 'toner', 'imprenta'),
     allowNull: false,
     comment: 'Tipo de pedido'
   },

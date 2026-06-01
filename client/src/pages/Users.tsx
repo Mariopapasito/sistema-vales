@@ -131,65 +131,65 @@ export default function Users() {
         </button>
       </div>
 
-          {loading ? (
-            <div className="loading">Cargando usuarios...</div>
-          ) : users.length === 0 ? (
-            <div className="empty-state">
-              <p>No hay usuarios registrados</p>
-            </div>
-          ) : (
-            <div className="users-grid">
-              {users.map((u: any) => (
-                <div key={u.id} className="user-card">
-                  <div className="user-avatar-large">
-                    {u.foto ? (
-                      <img src={u.foto} alt={u.nombre} />
-                    ) : (
-                      u.nombre[0].toUpperCase()
-                    )}
+      {loading ? (
+        <div className="loading">Cargando usuarios...</div>
+      ) : users.length === 0 ? (
+        <div className="empty-state">
+          <p>No hay usuarios registrados</p>
+        </div>
+      ) : (
+        <div className="users-grid">
+          {users.map((u: any) => (
+            <div key={u.id} className="user-card">
+              <div className="user-avatar-large">
+                {u.foto ? (
+                  <img src={u.foto} alt={u.nombre} />
+                ) : (
+                  u.nombre[0].toUpperCase()
+                )}
+              </div>
+
+              <div className="user-card-content">
+                <h3>{u.nombre}</h3>
+                <p className="user-email">{u.email}</p>
+
+                <div className="user-info">
+                  <div className="info-item">
+                    <span className="label">Rol:</span>
+                    <span
+                      className="role-badge"
+                      style={{ backgroundColor: rolColors[u.rol] || '#666' }}
+                    >
+                      {u.rol.toUpperCase()}
+                    </span>
                   </div>
-
-                  <div className="user-card-content">
-                    <h3>{u.nombre}</h3>
-                    <p className="user-email">{u.email}</p>
-
-                    <div className="user-info">
-                      <div className="info-item">
-                        <span className="label">Rol:</span>
-                        <span
-                          className="role-badge"
-                          style={{ backgroundColor: rolColors[u.rol] || '#666' }}
-                        >
-                          {u.rol.toUpperCase()}
-                        </span>
-                      </div>
-                      {u.estacion && (
-                        <div className="info-item">
-                          <span className="label">Estación:</span>
-                          <span className="value">{u.estacion}</span>
-                        </div>
-                      )}
+                  {u.estacion && (
+                    <div className="info-item">
+                      <span className="label">Estación:</span>
+                      <span className="value">{u.estacion}</span>
                     </div>
-
-                    <div className="user-card-actions">
-                      <button
-                        className="btn-edit"
-                        onClick={() => handleEdit(u)}
-                      >
-                        <PencilSquareIcon style={{ width: 16, height: 16 }} /> Editar
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDelete(u.id)}
-                      >
-                        <TrashIcon style={{ width: 16, height: 16 }} /> Eliminar
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ))}
+
+                <div className="user-card-actions">
+                  <button
+                    className="btn-edit"
+                    onClick={() => handleEdit(u)}
+                  >
+                    <PencilSquareIcon style={{ width: 16, height: 16 }} /> Editar
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDelete(u.id)}
+                  >
+                    <TrashIcon style={{ width: 16, height: 16 }} /> Eliminar
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
+          ))}
+        </div>
+      )}
 
       {/* Modal de crear/editar usuario */}
       {showModal && (

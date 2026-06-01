@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
-import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, CheckIcon, XMarkIcon, PlusIcon,
+import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, CheckIcon, XMarkIcon, PlusIcon, PrinterIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/CreateMonthlyOrder.css';
 import '../styles/MonthlyOrders.css';
@@ -21,6 +21,8 @@ const typeConfig = {
   aceites:   { label: 'PEDIDO ACEITES',   pillClass: 'pill-aceites',   Icon: ArchiveBoxIcon },
   papeleria: { label: 'PEDIDO PAPELERÍA', pillClass: 'pill-papeleria', Icon: DocumentTextIcon },
   limpieza:  { label: 'PEDIDO LIMPIEZA',  pillClass: 'pill-limpieza',  Icon: SparklesIcon },
+  toner:     { label: 'PEDIDO TÓNER',     pillClass: 'pill-toner',     Icon: PrinterIcon },
+  imprenta:  { label: 'PEDIDO IMPRENTA',  pillClass: 'pill-imprenta',  Icon: BookOpenIcon },
 };
 
 export default function CreateMonthlyOrder() {
@@ -80,7 +82,7 @@ export default function CreateMonthlyOrder() {
 
   // Si no hay tipo seleccionado, mostrar selector
   if (!tipo) {
-    const selectorCards = [
+    const allCards = [
       {
         tipo: 'aceites' as const,
         label: 'Aceites',
@@ -111,7 +113,32 @@ export default function CreateMonthlyOrder() {
         iconBg: '#22c55e',
         color: '#166534',
       },
+      {
+        tipo: 'toner' as const,
+        label: 'Tóner',
+        description: 'Tóner, cartuchos de tinta y suministros para impresoras',
+        Icon: PrinterIcon,
+        gradient: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+        border: '#c4b5fd',
+        iconBg: '#7c3aed',
+        color: '#4c1d95',
+      },
+      {
+        tipo: 'imprenta' as const,
+        label: 'Imprenta',
+        description: 'Materiales de imprenta, impresión y reproducción de documentos',
+        Icon: BookOpenIcon,
+        gradient: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+        border: '#fdba74',
+        iconBg: '#ea580c',
+        color: '#7c2d12',
+      },
     ];
+
+    // Filter by role: almacen/constructora only see toner; estacion sees all
+    const selectorCards = (['almacen', 'constructora'] as const).includes(user?.rol as any)
+      ? allCards.filter(c => c.tipo === 'toner')
+      : allCards;
 
     return (
       <div className="dashboard-container">

@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../store';
 import api from '../services/api';
-import { PlusIcon, ChevronRightIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, Squares2X2Icon, HandThumbUpIcon, BellAlertIcon, ArrowDownTrayIcon,
+import { PlusIcon, ChevronRightIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, Squares2X2Icon, HandThumbUpIcon, BellAlertIcon, ArrowDownTrayIcon, PrinterIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import * as XLSX from 'xlsx';
 import '../styles/MonthlyOrders.css';
@@ -20,7 +20,7 @@ interface MonthlyOrderItem {
 interface MonthlyOrder {
   id: string;
   folio: string;
-  tipo: 'aceites' | 'papeleria' | 'limpieza';
+  tipo: 'aceites' | 'papeleria' | 'limpieza' | 'toner' | 'imprenta';
   estacion: string;
   fecha: string;
   items: MonthlyOrderItem[];
@@ -34,7 +34,9 @@ interface MonthlyOrder {
 const typeConfig = {
   aceites:   { label: 'Aceites',   badgeClass: 'badge-aceites',   Icon: ArchiveBoxIcon },
   papeleria: { label: 'Papelería', badgeClass: 'badge-papeleria', Icon: DocumentTextIcon },
-  limpieza:  { label: 'Limpieza',  badgeClass: 'badge-limpieza',  Icon: SparklesIcon }
+  limpieza:  { label: 'Limpieza',  badgeClass: 'badge-limpieza',  Icon: SparklesIcon },
+  toner:     { label: 'Tóner',     badgeClass: 'badge-toner',     Icon: PrinterIcon },
+  imprenta:  { label: 'Imprenta',  badgeClass: 'badge-imprenta',  Icon: BookOpenIcon },
 };
 
 export default function MonthlyOrders() {
@@ -43,7 +45,7 @@ export default function MonthlyOrders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<MonthlyOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<'todos' | 'aceites' | 'papeleria' | 'limpieza'>('todos');
+  const [selectedType, setSelectedType] = useState<'todos' | 'aceites' | 'papeleria' | 'limpieza' | 'toner' | 'imprenta'>('todos');
 
   useEffect(() => { fetchOrders(); }, []);
 
@@ -120,7 +122,9 @@ export default function MonthlyOrders() {
     const tipoLabels: any = {
       aceites:   'PEDIDO ACEITES',
       papeleria: 'PEDIDO PAPELERÍA',
-      limpieza:  'PEDIDO LIMPIEZA'
+      limpieza:  'PEDIDO LIMPIEZA',
+      toner:     'PEDIDO TÓNER',
+      imprenta:  'PEDIDO IMPRENTA'
     };
 
     const fecha = new Date(order.createdAt).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -171,6 +175,8 @@ export default function MonthlyOrders() {
     aceites:   filtered.filter(o => o.tipo === 'aceites'),
     papeleria: filtered.filter(o => o.tipo === 'papeleria'),
     limpieza:  filtered.filter(o => o.tipo === 'limpieza'),
+    toner:     filtered.filter(o => o.tipo === 'toner'),
+    imprenta:  filtered.filter(o => o.tipo === 'imprenta'),
   };
 
   // Reminder: pedidos where my side hasn't confirmed yet but the other has
@@ -215,7 +221,7 @@ export default function MonthlyOrders() {
 
         {/* Tabs */}
         <div className="tabs-row">
-          {([['todos', 'Todos', Squares2X2Icon], ['aceites', 'Aceites', ArchiveBoxIcon], ['papeleria', 'Papelería', DocumentTextIcon], ['limpieza', 'Limpieza', SparklesIcon]] as any[]).map(([val, lbl, Icon]) => (
+          {([['todos', 'Todos', Squares2X2Icon], ['aceites', 'Aceites', ArchiveBoxIcon], ['papeleria', 'Papelería', DocumentTextIcon], ['limpieza', 'Limpieza', SparklesIcon], ['toner', 'Tóner', PrinterIcon], ['imprenta', 'Imprenta', BookOpenIcon]] as any[]).map(([val, lbl, Icon]) => (
             <button
               key={val}
               className={`tab-btn ${selectedType === val ? 'active' : ''}`}
@@ -227,20 +233,26 @@ export default function MonthlyOrders() {
           ))}
         </div>
 
-        {/* Create buttons for estacion */}
-        {user?.rol === 'estacion' && (
-          <div className="new-orders-row">
-            {(['aceites', 'papeleria', 'limpieza'] as const).map((tipo) => {
-              const cfg = typeConfig[tipo];
-              return (
-                <button key={tipo} className="btn-new-type" onClick={() => navigate('/create-monthly-order', { state: { tipo } })}>
-                  <PlusIcon style={{ width: 16, height: 16 }} />
-                  Nuevo Pedido {cfg.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Create buttons based on role */}
+        {(['estacion', 'almacen', 'constructora'] as const).includes(user?.rol as any) && (() => {
+          // estacion: all types; almacen/constructora: only toner
+          const tiposPermitidos: Array<keyof typeof typeConfig> = user?.rol === 'estacion'
+            ? ['aceites', 'papeleria', 'limpieza', 'toner', 'imprenta']
+            : ['toner'];
+          return (
+            <div className="new-orders-row">
+              {tiposPermitidos.map((tipo) => {
+                const cfg = typeConfig[tipo];
+                return (
+                  <button key={tipo} className="btn-new-type" onClick={() => navigate('/create-monthly-order', { state: { tipo } })}>
+                    <PlusIcon style={{ width: 16, height: 16 }} />
+                    Nuevo Pedido {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* Groups */}
         {Object.entries(groups).map(([tipoKey, items]) => {

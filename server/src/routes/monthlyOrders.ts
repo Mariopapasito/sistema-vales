@@ -12,10 +12,10 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
-    // Estaciones ven solo sus pedidos
-    // Compras y Jefe ven todos
+    // Estaciones y roles similares ven solo sus pedidos; Compras y Jefe ven todos
+    const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
     let where: any = {};
-    if (user.rol === 'estacion') {
+    if (ESTACION_LIKE.includes(user.rol)) {
       where.estacion = user.estacion || user.nombre;
     }
 
@@ -132,7 +132,8 @@ router.patch('/:id/confirmar', authMiddleware, async (req: Request, res: Respons
     const order = await MonthlyOrder.findByPk(req.params.id);
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
 
-    if (user.rol === 'estacion') {
+    const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
+    if (ESTACION_LIKE.includes(user.rol)) {
       const orderEstacion = (order as any).estacion;
       if (orderEstacion !== user.estacion && orderEstacion !== user.nombre) {
         logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Sin permiso para confirmar pedido ${(order as any).folio} (estación no coincide)` });

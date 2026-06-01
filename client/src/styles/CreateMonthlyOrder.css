@@ -97,6 +97,8 @@
 .pill-aceites   { background: rgba(251,191,36,0.2); color: #fde68a; border: 1px solid rgba(251,191,36,0.4); }
 .pill-papeleria { background: rgba(147,197,253,0.2); color: #bfdbfe; border: 1px solid rgba(147,197,253,0.4); }
 .pill-limpieza  { background: rgba(110,231,183,0.2); color: #a7f3d0; border: 1px solid rgba(110,231,183,0.4); }
+.pill-toner     { background: rgba(196,181,253,0.2); color: #c4b5fd; border: 1px solid rgba(196,181,253,0.4); }
+.pill-imprenta  { background: rgba(253,186,116,0.2); color: #fdba74; border: 1px solid rgba(253,186,116,0.4); }
 
 /* Meta info row */
 .doc-meta {

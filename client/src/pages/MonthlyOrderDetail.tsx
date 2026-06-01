@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
-import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, PencilSquareIcon, CheckIcon, XMarkIcon, CheckCircleIcon, BellAlertIcon, HandThumbUpIcon, ArrowDownTrayIcon,
+import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, PencilSquareIcon, CheckIcon, XMarkIcon, CheckCircleIcon, BellAlertIcon, HandThumbUpIcon, ArrowDownTrayIcon, PrinterIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import OrderComments from '../components/OrderComments';
 import * as XLSX from 'xlsx';
@@ -23,7 +23,7 @@ interface Item {
 interface MonthlyOrder {
   id: string;
   folio: string;
-  tipo: 'aceites' | 'papeleria' | 'limpieza';
+  tipo: 'aceites' | 'papeleria' | 'limpieza' | 'toner' | 'imprenta';
   estacion: string;
   fecha: string;
   items: Item[];
@@ -38,6 +38,8 @@ const typeConfig = {
   aceites:   { label: 'PEDIDO ACEITES',   pillClass: 'pill-aceites',   Icon: ArchiveBoxIcon },
   papeleria: { label: 'PEDIDO PAPELERÍA', pillClass: 'pill-papeleria', Icon: DocumentTextIcon },
   limpieza:  { label: 'PEDIDO LIMPIEZA',  pillClass: 'pill-limpieza',  Icon: SparklesIcon },
+  toner:     { label: 'PEDIDO TÓNER',     pillClass: 'pill-toner',     Icon: PrinterIcon },
+  imprenta:  { label: 'PEDIDO IMPRENTA',  pillClass: 'pill-imprenta',  Icon: BookOpenIcon },
 };
 
 export default function MonthlyOrderDetail() {
@@ -123,7 +125,9 @@ export default function MonthlyOrderDetail() {
     const tipoLabels: any = {
       aceites:   'PEDIDO ACEITES',
       papeleria: 'PEDIDO PAPELERÍA',
-      limpieza:  'PEDIDO LIMPIEZA'
+      limpieza:  'PEDIDO LIMPIEZA',
+      toner:     'PEDIDO TÓNER',
+      imprenta:  'PEDIDO IMPRENTA'
     };
     const fecha = new Date(order.fecha).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
     const headerData = [
@@ -193,7 +197,7 @@ export default function MonthlyOrderDetail() {
         if (remainingH > 0) { pdf.addPage(); y = 10; }
       }
 
-      const tipoLabels: any = { aceites: 'Aceites', papeleria: 'Papeleria', limpieza: 'Limpieza' };
+      const tipoLabels: any = { aceites: 'Aceites', papeleria: 'Papeleria', limpieza: 'Limpieza', toner: 'Toner', imprenta: 'Imprenta' };
       pdf.save(`Pedido-${tipoLabels[order.tipo]}-${order.folio}.pdf`);
     } catch (err) {
       console.error('Error generando PDF:', err);

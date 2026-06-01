@@ -94,82 +94,82 @@ export default function Profile() {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1.75rem 2rem', flex: 1 }}>
-        <div className="profile-container">
-          <div className="profile-header">
-            <h1><UserCircleIcon style={{ width: 28, height: 28 }} /> Mi Perfil</h1>
-            <p className="subtitle">Edita tu información personal</p>
+      <div className="profile-container">
+        <div className="profile-header">
+          <h1><UserCircleIcon style={{ width: 28, height: 28 }} /> Mi Perfil</h1>
+          <p className="subtitle">Edita tu información personal</p>
+        </div>
+
+        {success && (
+          <div className="success-message">
+            <CheckCircleIcon style={{ width: 18, height: 18 }} /> Perfil actualizado correctamente
+          </div>
+        )}
+
+        <div className="profile-card">
+          <div className="profile-photo-section">
+            <div className="photo-container">
+              {foto ? (
+                <img src={foto} alt="Perfil" />
+              ) : (
+                <div className="photo-placeholder">{user?.nombre?.[0]?.toUpperCase()}</div>
+              )}
+            </div>
+            <button type="button" className="btn-upload" onClick={() => fileInputRef.current?.click()}>
+              <CameraIcon style={{ width: 18, height: 18 }} /> Cambiar Foto
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              style={{ display: 'none' }}
+            />
           </div>
 
-          {success && (
-            <div className="success-message">
-              <CheckCircleIcon style={{ width: 18, height: 18 }} /> Perfil actualizado correctamente
-            </div>
-          )}
-
-          <div className="profile-card">
-            <div className="profile-photo-section">
-              <div className="photo-container">
-                {foto ? (
-                  <img src={foto} alt="Perfil" />
-                ) : (
-                  <div className="photo-placeholder">{user?.nombre?.[0]?.toUpperCase()}</div>
-                )}
-              </div>
-              <button type="button" className="btn-upload" onClick={() => fileInputRef.current?.click()}>
-                <CameraIcon style={{ width: 18, height: 18 }} /> Cambiar Foto
-              </button>
+          <form onSubmit={handleSubmit} className="profile-form">
+            <div className="form-group">
+              <label>Nombre</label>
               <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                style={{ display: 'none' }}
+                type="text"
+                value={profileData.nombre}
+                onChange={(e) => setProfileData({ ...profileData, nombre: e.target.value })}
               />
             </div>
 
-            <form onSubmit={handleSubmit} className="profile-form">
-              <div className="form-group">
-                <label>Nombre</label>
-                <input
-                  type="text"
-                  value={profileData.nombre}
-                  onChange={(e) => setProfileData({ ...profileData, nombre: e.target.value })}
-                />
-              </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={profileData.email}
+                disabled
+              />
+            </div>
 
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={profileData.email}
-                  disabled
-                />
-              </div>
+            <div className="form-group">
+              <label>Estación</label>
+              <input
+                type="text"
+                value={profileData.estacion}
+                onChange={(e) => setProfileData({ ...profileData, estacion: e.target.value })}
+              />
+            </div>
 
-              <div className="form-group">
-                <label>Estación</label>
-                <input
-                  type="text"
-                  value={profileData.estacion}
-                  onChange={(e) => setProfileData({ ...profileData, estacion: e.target.value })}
-                />
-              </div>
+            <div className="form-group">
+              <label>Rol</label>
+              <input
+                type="text"
+                value={user?.rol || ''}
+                disabled
+              />
+            </div>
 
-              <div className="form-group">
-                <label>Rol</label>
-                <input
-                  type="text"
-                  value={user?.rol || ''}
-                  disabled
-                />
-              </div>
-
-              <button type="submit" disabled={loading} className="btn-save">
-                {loading ? <><ArrowPathIcon style={{ width: 16, height: 16 }} /> Guardando...</> : <><CheckIcon style={{ width: 16, height: 16 }} /> Guardar Cambios</>}
-              </button>
-            </form>
-          </div>
+            <button type="submit" disabled={loading} className="btn-save">
+              {loading ? <><ArrowPathIcon style={{ width: 16, height: 16 }} /> Guardando...</> : <><CheckIcon style={{ width: 16, height: 16 }} /> Guardar Cambios</>}
+            </button>
+          </form>
         </div>
+      </div>
     </div>
   );
 }
