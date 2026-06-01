@@ -21,6 +21,12 @@ router.post('/subscribe', protect, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Invalid subscription' });
     }
 
+    // Remove this endpoint from any OTHER user first — one endpoint can only belong to one user
+    await sequelize.query(
+      `DELETE FROM push_subscriptions WHERE endpoint = :endpoint AND user_id != :userId`,
+      { replacements: { endpoint, userId }, type: QueryTypes.DELETE }
+    );
+
     await sequelize.query(
       `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
        VALUES (:userId, :endpoint, :p256dh, :auth)

@@ -16,18 +16,21 @@ async function notifyNewComment(order: any, commentorId: number, commentorName: 
   const preview = texto.substring(0, 80) + (texto.length > 80 ? '…' : '');
   const commentor = await User.findByPk(commentorId, { attributes: ['rol'] });
   const commentorRole = commentor ? (commentor as any).rol : '';
-  const commentorIsManager = ['sistemas', 'jefe'].includes(commentorRole);
+
+  // Managers for each order type: compras orders → compras+jefe; sistemas orders → sistemas+jefe
+  const orderManagerRoles: string[] = order.tipo === 'compras' ? ['compras', 'jefe'] : ['sistemas', 'jefe'];
+  const commentorIsManager = orderManagerRoles.includes(commentorRole);
 
   if (!commentorIsManager) {
-    // Estacion/creator commented → notify sistemas and jefe
-    await ns.notifyByRoles(['sistemas', 'jefe'], {
+    // Non-manager commented → notify the order's responsible role(s)
+    await ns.notifyByRoles(orderManagerRoles, {
       tipo: 'COMMENT',
       titulo: '💬 Nuevo mensaje en orden',
       mensaje: `${commentorName} en ${order.folio}: "${preview}"`,
       datos: { orderId: order.id, folio: order.folio },
     }, commentorId);
   } else if (order.usuarioId !== commentorId) {
-    // Sistemas/jefe replied → notify order creator
+    // Manager replied → notify order creator
     await ns.notifyUser(order.usuarioId, {
       tipo: 'COMMENT',
       titulo: '💬 Respuesta en tu orden',
@@ -101,11 +104,12 @@ router.post('/:id/comments', authMiddleware, async (req: AuthRequest, res: Respo
     const order = await Order.findByPk(orderId);
     if (!order) return res.status(404).json({ message: 'Orden no encontrada' });
 
-    // Only order creator, sistemas, and jefe can post comments
+    // Only order creator or the order's managing role can post comments
     const isCreator = order.usuarioId === usuarioId;
-    const isManagerRole = ['sistemas', 'jefe'].includes(userRole || '');
+    const orderManagers = order.tipo === 'compras' ? ['compras', 'jefe'] : ['sistemas', 'jefe'];
+    const isManagerRole = orderManagers.includes(userRole || '');
     if (!isCreator && !isManagerRole) {
-      return res.status(403).json({ message: 'Solo el creador de la orden, sistemas y jefe pueden comentar' });
+      return res.status(403).json({ message: 'Solo el creador de la orden o el rol responsable puede comentar' });
     }
 
     const comment = await OrderComment.create({ orderId, usuarioId, texto: texto.trim() });
