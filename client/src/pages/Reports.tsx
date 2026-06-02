@@ -61,6 +61,9 @@ export const Reports: React.FC = () => {
     descripcion: '',
   });
   const [imagenes, setImagenes] = useState<ImageFile[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState(false);
 
   const canCreate = user?.rol === 'sistemas' || user?.rol === 'compras';
   const canView = user?.rol === 'sistemas' || user?.rol === 'compras' || user?.rol === 'jefe';
@@ -134,14 +137,22 @@ export const Reports: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (imagenes.length === 0) {
-      alert('Agrega al menos una imagen');
+    setFormError(null);
+
+    if (!formData.titulo.trim()) {
+      setFormError('El título es obligatorio');
       return;
     }
 
+    if (imagenes.length === 0) {
+      setFormError('Debes agregar al menos una imagen');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const uploadData = new FormData();
-      uploadData.append('titulo', formData.titulo);
+      uploadData.append('titulo', formData.titulo.trim());
       uploadData.append('descripcion', formData.descripcion);
 
       imagenes.forEach((img) => {
@@ -157,14 +168,19 @@ export const Reports: React.FC = () => {
 
       setFormData({ titulo: '', descripcion: '' });
       setImagenes([]);
-      setShowForm(false);
+      setFormSuccess(true);
       setMediaSource(null);
       fetchReports();
-      alert('Reporte creado exitosamente');
+      setTimeout(() => {
+        setFormSuccess(false);
+        setShowForm(false);
+      }, 1500);
     } catch (err) {
       console.error('Error creating report:', err);
-      const errorMsg = (err as any).response?.data?.error || (err as any).message || 'Error desconocido';
-      alert('Error al crear reporte: ' + errorMsg);
+      const errorMsg = (err as any).response?.data?.error || (err as any).message || 'Error al crear reporte';
+      setFormError(errorMsg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -276,7 +292,7 @@ export const Reports: React.FC = () => {
       // Iterar sobre cada imagen
       for (let i = 0; i < selectedReport.imagenes.length; i++) {
         const image = selectedReport.imagenes[i];
-        const imageUrl = image.url.startsWith('http')
+        const imageUrl = image.url.startsWith('data:') || image.url.startsWith('http')
           ? image.url
           : `${getBaseURL()}${image.url}`;
 
@@ -432,15 +448,34 @@ export const Reports: React.FC = () => {
           {canCreate && showForm && (
             <div className="report-form-container">
               <form onSubmit={handleSubmit} className="report-form">
+                {formError && (
+                  <div style={{
+                    background: '#fee2e2', color: '#b91c1c', borderRadius: 8,
+                    padding: '10px 14px', marginBottom: 12, fontSize: 14,
+                    border: '1px solid #fca5a5',
+                  }}>
+                    ⚠️ {formError}
+                  </div>
+                )}
+                {formSuccess && (
+                  <div style={{
+                    background: '#dcfce7', color: '#15803d', borderRadius: 8,
+                    padding: '10px 14px', marginBottom: 12, fontSize: 14,
+                    border: '1px solid #86efac',
+                  }}>
+                    ✅ Reporte publicado correctamente
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Título *</label>
                   <input
                     type="text"
                     placeholder="Ej: Mantenimiento completado"
                     value={formData.titulo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, titulo: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormError(null);
+                      setFormData({ ...formData, titulo: e.target.value });
+                    }}
                     className="form-input"
                     required
                   />
@@ -502,17 +537,20 @@ export const Reports: React.FC = () => {
                 </div>
 
                 <div className="form-actions">
-                  <button type="submit" className="btn-submit">
-                    Publicar
+                  <button type="submit" className="btn-submit" disabled={submitting}>
+                    {submitting ? 'Publicando...' : 'Publicar'}
                   </button>
                   <button
                     type="button"
                     className="btn-cancel"
+                    disabled={submitting}
                     onClick={() => {
                       setShowForm(false);
                       setFormData({ titulo: '', descripcion: '' });
                       setImagenes([]);
                       setMediaSource(null);
+                      setFormError(null);
+                      setFormSuccess(false);
                     }}
                   >
                     Cancelar
@@ -662,7 +700,7 @@ export const Reports: React.FC = () => {
               {/* Report Document with Vertical Scroll */}
               <div className="report-document-scroll">
                 {selectedReport.imagenes.map((image, idx) => {
-                  const imageUrl = image.url.startsWith('http')
+                  const imageUrl = image.url.startsWith('data:') || image.url.startsWith('http')
                     ? image.url
                     : `${getBaseURL()}${image.url}`;
                   
