@@ -74,6 +74,18 @@ export const Reports: React.FC = () => {
     }
   }, []);
 
+  // Hide sticky header when preview is open (fixes iOS stacking context bug)
+  useEffect(() => {
+    if (showPreview) {
+      document.body.classList.add('preview-modal-open');
+    } else {
+      document.body.classList.remove('preview-modal-open');
+    }
+    return () => {
+      document.body.classList.remove('preview-modal-open');
+    };
+  }, [showPreview]);
+
   const fetchReports = async () => {
     try {
       const res = await api.get('/reports');
