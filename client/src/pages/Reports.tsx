@@ -35,7 +35,7 @@ interface Report {
   id: number;
   titulo: string;
   descripcion: string;
-  imagenes: Array<{ url: string; descripcion: string }>;
+  imagenes?: Array<{ url: string; descripcion: string }>;
   createdAt: string;
   User?: { id: number; nombre: string; rol: string };
 }
@@ -195,10 +195,21 @@ export const Reports: React.FC = () => {
     }
   };
 
-  const openPreview = (report: Report) => {
-    setSelectedReport(report);
-    setCurrentImageIndex(0);
+  const openPreview = async (report: Report) => {
     setShowPreview(true);
+    setCurrentImageIndex(0);
+    // Si ya tiene imágenes cargadas, usar directo; si no, fetchar el detalle
+    if (report.imagenes && report.imagenes.length > 0) {
+      setSelectedReport(report);
+    } else {
+      setSelectedReport({ ...report, imagenes: [] });
+      try {
+        const res = await api.get(`/reports/${report.id}`);
+        setSelectedReport(res.data);
+      } catch (err) {
+        console.error('Error fetching report detail:', err);
+      }
+    }
   };
 
   const closePreview = () => {
@@ -208,7 +219,7 @@ export const Reports: React.FC = () => {
   };
 
   const goToNextImage = () => {
-    if (selectedReport && currentImageIndex < selectedReport.imagenes.length - 1) {
+    if (selectedReport && selectedReport.imagenes && currentImageIndex < selectedReport.imagenes.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
     }
   };
@@ -290,8 +301,9 @@ export const Reports: React.FC = () => {
       let isFirstPage = true;
 
       // Iterar sobre cada imagen
-      for (let i = 0; i < selectedReport.imagenes.length; i++) {
-        const image = selectedReport.imagenes[i];
+      const imagenes = selectedReport.imagenes || [];
+      for (let i = 0; i < imagenes.length; i++) {
+        const image = imagenes[i];
         const imageUrl = image.url.startsWith('data:') || image.url.startsWith('http')
           ? image.url
           : `${getBaseURL()}${image.url}`;
@@ -318,7 +330,7 @@ export const Reports: React.FC = () => {
           margin + 25,
           margin + 10
         );
-        pdf.text(`Nro. de elementos: ${selectedReport.imagenes.length}`, margin + 25, margin + 15);
+        pdf.text(`Nro. de elementos: ${imagenes.length}`, margin + 25, margin + 15);
 
         // Línea separadora
         pdf.setDrawColor(0);
@@ -384,7 +396,7 @@ export const Reports: React.FC = () => {
           pageHeight - margin + 2
         );
         pdf.text(
-          `página ${i + 1} de ${selectedReport.imagenes.length}`,
+          `página ${i + 1} de ${imagenes.length}`,
           pageWidth - margin - 35,
           pageHeight - margin + 2,
           { align: 'right' }
@@ -634,7 +646,6 @@ export const Reports: React.FC = () => {
                       <h3>{report.titulo}</h3>
                       <p className="report-meta-simple">
                         {report.User?.nombre} •{' '}
-                        {report.imagenes.length} imagen{report.imagenes.length !== 1 ? 'es' : ''} •{' '}
                         {new Date(report.createdAt).toLocaleDateString('es-MX')}
                       </p>
                     </div>
@@ -652,7 +663,6 @@ export const Reports: React.FC = () => {
                   <div className="report-card-content">
                     <h3>{report.titulo}</h3>
                     <p className="report-meta-simple">
-                      {report.imagenes.length} imagen{report.imagenes.length !== 1 ? 'es' : ''} •{' '}
                       {new Date(report.createdAt).toLocaleDateString('es-MX')}
                     </p>
                   </div>
@@ -672,7 +682,7 @@ export const Reports: React.FC = () => {
           </div>
 
       {/* Preview Modal */}
-      {showPreview && selectedReport && selectedReport.imagenes.length > 0 && (
+      {showPreview && selectedReport && (
         <div className="preview-modal-overlay">
           <div className="preview-modal">
             <div className="preview-header">
@@ -697,48 +707,46 @@ export const Reports: React.FC = () => {
             </div>
 
             <div className="preview-content">
-              {/* Report Document with Vertical Scroll */}
               <div className="report-document-scroll">
-                {selectedReport.imagenes.map((image, idx) => {
+                {(!selectedReport.imagenes || selectedReport.imagenes.length === 0) ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>
+                    Cargando imágenes...
+                  </div>
+                ) : selectedReport.imagenes.map((image, idx) => {
                   const imageUrl = image.url.startsWith('data:') || image.url.startsWith('http')
                     ? image.url
                     : `${getBaseURL()}${image.url}`;
                   
                   return (
                     <div key={idx} className="report-page">
-                      {/* Page Header */}
                       <div className="doc-header">
                         <div className="header-row">
                           <span>Título: {selectedReport.titulo}</span>
                           <span>Creado el: {new Date(selectedReport.createdAt).toLocaleDateString('es-MX')}</span>
-                          <span>Nro. de elementos: {selectedReport.imagenes.length}</span>
+                          <span>Nro. de elementos: {selectedReport.imagenes!.length}</span>
                         </div>
                       </div>
 
-                      {/* Image */}
                       <div className="image-viewer-scroll">
                         <div className="image-number">{idx + 1}</div>
                         <img
                           src={imageUrl}
                           alt={`image-${idx}`}
                           onError={(e) => {
-                            console.error('Error loading image:', imageUrl);
                             (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2216%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
                           }}
                         />
                       </div>
 
-                      {/* Description */}
                       {image.descripcion && (
                         <div className="image-description">
                           <p>{image.descripcion}</p>
                         </div>
                       )}
 
-                      {/* Page Footer */}
                       <div className="doc-footer">
                         <span>Generado por 'Report & Run'</span>
-                        <span>página {idx + 1} de {selectedReport.imagenes.length}</span>
+                        <span>página {idx + 1} de {selectedReport.imagenes!.length}</span>
                       </div>
                     </div>
                   );

@@ -20,7 +20,7 @@ const upload = multer({
   },
 });
 
-// GET /reports - Obtener todos los reportes
+// GET /reports - Obtener todos los reportes (SIN imágenes para no sobrecargar)
 router.get('/', protect, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
@@ -29,11 +29,11 @@ router.get('/', protect, async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'No tienes permisos para ver reportes' });
     }
 
-    // Jefe ve todos; sistemas y compras solo ven los suyos
     const whereClause = user?.rol === 'jefe' ? {} : { userId: user?.id };
 
     const reports = await ReportPhoto.findAll({
       where: whereClause,
+      attributes: ['id', 'titulo', 'descripcion', 'userId', 'createdAt', 'updatedAt'],
       include: [
         {
           model: User,
@@ -43,10 +43,43 @@ router.get('/', protect, async (req: Request, res: Response) => {
       order: [['createdAt', 'DESC']],
     });
 
-    res.json(reports);
+    // Añadir conteo de imágenes sin devolver los datos
+    const reportsWithCount = reports.map((r: any) => {
+      const plain = r.get({ plain: true });
+      return plain;
+    });
+
+    res.json(reportsWithCount);
   } catch (err) {
     console.error('Error fetching reports:', err);
     res.status(500).json({ error: 'Error al obtener reportes' });
+  }
+});
+
+// GET /reports/:id - Obtener un reporte con sus imágenes completas
+router.get('/:id', protect, async (req: Request, res: Response) => {
+  try {
+    const user = (req as AuthRequest).user;
+
+    if (!['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) {
+      return res.status(403).json({ error: 'No tienes permisos' });
+    }
+
+    const report = await ReportPhoto.findByPk(req.params.id, {
+      include: [{ model: User, attributes: ['id', 'nombre', 'rol'] }],
+    });
+
+    if (!report) return res.status(404).json({ error: 'Reporte no encontrado' });
+
+    // Jefe ve todos; otros solo ven los suyos
+    if (user?.rol !== 'jefe' && (report as any).userId !== user?.id) {
+      return res.status(403).json({ error: 'No tienes permisos' });
+    }
+
+    res.json(report);
+  } catch (err) {
+    console.error('Error fetching report:', err);
+    res.status(500).json({ error: 'Error al obtener reporte' });
   }
 });
 

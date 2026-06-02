@@ -25,6 +25,7 @@ export const CreateOrder: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -164,21 +165,44 @@ export const CreateOrder: React.FC = () => {
               onChange={handleImageSelect}
               style={{ display: 'none' }}
             />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImageSelect}
+              style={{ display: 'none' }}
+            />
             {imagenes.length < 5 && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  padding: '0.75rem 1rem', border: '2px dashed #d1d5db',
-                  borderRadius: '8px', background: '#f9fafb', color: '#6b7280',
-                  cursor: 'pointer', width: '100%', justifyContent: 'center',
-                  fontSize: '0.9rem', fontWeight: '500'
-                }}
-              >
-                <PhotoIcon style={{ width: 20, height: 20 }} />
-                Agregar foto(s)
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.75rem 1rem', border: '2px dashed #d1d5db',
+                    borderRadius: '8px', background: '#f9fafb', color: '#6b7280',
+                    cursor: 'pointer', flex: 1, justifyContent: 'center',
+                    fontSize: '0.9rem', fontWeight: '500'
+                  }}
+                >
+                  📷 Cámara
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.75rem 1rem', border: '2px dashed #d1d5db',
+                    borderRadius: '8px', background: '#f9fafb', color: '#6b7280',
+                    cursor: 'pointer', flex: 1, justifyContent: 'center',
+                    fontSize: '0.9rem', fontWeight: '500'
+                  }}
+                >
+                  <PhotoIcon style={{ width: 20, height: 20 }} />
+                  Galería
+                </button>
+              </div>
             )}
             {imagenes.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
