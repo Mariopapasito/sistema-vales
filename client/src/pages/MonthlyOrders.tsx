@@ -45,7 +45,10 @@ export default function MonthlyOrders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<MonthlyOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<'todos' | 'aceites' | 'papeleria' | 'limpieza' | 'toner' | 'imprenta'>('todos');
+  const isSistemas = user?.rol === 'sistemas';
+
+  // sistemas always sees only toner, set default tab accordingly
+  const [selectedType, setSelectedType] = useState<'todos' | 'aceites' | 'papeleria' | 'limpieza' | 'toner' | 'imprenta'>(isSistemas ? 'toner' : 'todos');
 
   useEffect(() => { fetchOrders(); }, []);
 
@@ -221,7 +224,9 @@ export default function MonthlyOrders() {
 
         {/* Tabs */}
         <div className="tabs-row">
-          {([['todos', 'Todos', Squares2X2Icon], ['aceites', 'Aceites', ArchiveBoxIcon], ['papeleria', 'Papelería', DocumentTextIcon], ['limpieza', 'Limpieza', SparklesIcon], ['toner', 'Tóner', PrinterIcon], ['imprenta', 'Imprenta', BookOpenIcon]] as any[]).map(([val, lbl, Icon]) => (
+          {([['todos', 'Todos', Squares2X2Icon], ['aceites', 'Aceites', ArchiveBoxIcon], ['papeleria', 'Papelería', DocumentTextIcon], ['limpieza', 'Limpieza', SparklesIcon], ['toner', 'Tóner', PrinterIcon], ['imprenta', 'Imprenta', BookOpenIcon]] as any[])
+            .filter(([val]) => !isSistemas || val === 'toner')
+            .map(([val, lbl, Icon]) => (
             <button
               key={val}
               className={`tab-btn ${selectedType === val ? 'active' : ''}`}

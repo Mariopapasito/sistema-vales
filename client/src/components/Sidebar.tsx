@@ -137,8 +137,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
           )}
 
-          {/* Monthly Orders - Jefe, Compras, Estacion, Almacen, Constructora */}
-          {(['jefe', 'compras', 'estacion', 'almacen', 'constructora'] as const).includes(user?.rol as any) && (
+          {/* Monthly Orders - Jefe, Compras, Estacion, Almacen, Constructora, Sistemas (solo toner) */}
+          {(['jefe', 'compras', 'estacion', 'almacen', 'constructora', 'sistemas'] as const).includes(user?.rol as any) && (
             <button ref={refIfActive('/monthly-orders')} onClick={() => handleNavClick('/monthly-orders')} className={navClass('/monthly-orders')}>
               <ArchiveBoxIcon className="nav-icon" />
               <span className="nav-text">Pedidos Mensuales</span>

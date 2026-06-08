@@ -12,11 +12,13 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
-    // Estaciones y roles similares ven solo sus pedidos; Compras y Jefe ven todos
+    // Estaciones y roles similares ven solo sus pedidos; Compras y Jefe ven todos; Sistemas solo toner
     const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
     let where: any = {};
     if (ESTACION_LIKE.includes(user.rol)) {
       where.estacion = user.estacion || user.nombre;
+    } else if (user.rol === 'sistemas') {
+      where.tipo = 'toner';
     }
 
     const orders = await MonthlyOrder.findAll({
