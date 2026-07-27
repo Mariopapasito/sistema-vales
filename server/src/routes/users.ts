@@ -21,11 +21,24 @@ router.post('/', protect, canManageUsers, async (req: AuthRequest, res: Response
     if (!nombre || !email || !password) {
       return res.status(400).json({ message: 'Nombre, email y contraseña son requeridos' });
     }
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
+
+    const existingActive = await User.findOne({ where: { email, activo: true } });
+    if (existingActive) {
       return res.status(400).json({ message: 'Ya existe un usuario con ese email' });
     }
+
     const hashedPassword = await bcrypt.hash(password, 12);
+    const existingInactive = await User.findOne({ where: { email, activo: false } });
+    if (existingInactive) {
+      existingInactive.nombre = nombre;
+      existingInactive.password = hashedPassword;
+      existingInactive.rol = rol || 'estacion';
+      existingInactive.estacion = estacion;
+      existingInactive.activo = true;
+      await existingInactive.save();
+      return res.status(200).json({ message: 'Usuario reactivado', user: { id: existingInactive.id, nombre: existingInactive.nombre, email: existingInactive.email, rol: existingInactive.rol } });
+    }
+
     const user = await User.create({ nombre, email, password: hashedPassword, rol: rol || 'estacion', estacion });
     res.status(201).json({ message: 'Usuario creado', user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
   } catch (error: any) {

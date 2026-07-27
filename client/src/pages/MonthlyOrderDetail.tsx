@@ -53,6 +53,7 @@ export default function MonthlyOrderDetail() {
   const [editItems, setEditItems] = useState<Item[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pdfMode, setPdfMode] = useState<'pedido' | 'revision' | null>(null);
 
   const canDelete = ['jefe', 'sistemas'].includes(user?.rol || '');
 
@@ -120,7 +121,7 @@ export default function MonthlyOrderDetail() {
     }
   };
 
-  const downloadAsExcel = () => {
+  const downloadAsExcel = (mode: 'pedido' | 'revision') => {
     if (!order) return;
     const tipoLabels: any = {
       aceites:   'PEDIDO ACEITES',
@@ -136,40 +137,58 @@ export default function MonthlyOrderDetail() {
       [`${tipoLabels[order.tipo]} — ${fecha}`],
       [`Folio: ${order.folio}    Estación: ${order.estacion}`],
       [],
-      ['No.', 'Descripción', 'Consumibles', 'Intercambiables', 'Existencias', 'Unidad', 'Cantidad']
+      mode === 'revision'
+        ? ['No.', 'Descripción', 'Consumibles', 'Intercambiables', 'Existencias', 'Unidad', 'Cantidad']
+        : ['No.', 'Descripción', 'Consumibles', 'Intercambiables', 'Unidad', 'Cantidad']
     ];
-    const itemsData = order.items.map((item, idx) => [
-      idx + 1, item.descripcion,
-      item.consumibles ? 'Sí' : 'No',
-      item.intercambiables ? 'Sí' : 'No',
-      item.existencias, item.unidad,
-      item.cantidad > 0 ? item.cantidad : ''
-    ]);
+
+    const itemsData = order.items.map((item, idx) => {
+      const row = [
+        idx + 1,
+        item.descripcion,
+        item.consumibles ? 'Sí' : 'No',
+        item.intercambiables ? 'Sí' : 'No'
+      ] as Array<string | number>;
+
+      if (mode === 'revision') {
+        row.push(item.existencias);
+      }
+      row.push(item.unidad);
+      row.push(item.cantidad > 0 ? item.cantidad : '');
+      return row;
+    });
+
     const ws = XLSX.utils.aoa_to_sheet([...headerData, ...itemsData]);
-    ws['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }];
+    ws['!cols'] = mode === 'revision'
+      ? [{ wch: 5 }, { wch: 35 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }]
+      : [{ wch: 5 }, { wch: 35 }, { wch: 12 }, { wch: 15 }, { wch: 10 }, { wch: 10 }];
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
+      { s: { r: 0, c: 0 }, e: { r: 0, c: mode === 'revision' ? 6 : 5 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: mode === 'revision' ? 6 : 5 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: mode === 'revision' ? 6 : 5 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: mode === 'revision' ? 6 : 5 } },
     ];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Pedido');
-    XLSX.writeFile(wb, `${tipoLabels[order.tipo].replace(/ /g, '-')}-${order.folio}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, mode === 'revision' ? 'Revision' : 'Pedido');
+    XLSX.writeFile(wb, `${mode === 'revision' ? 'Revision' : 'Pedido'}-${tipoLabels[order.tipo].replace(/ /g, '-')}-${order.folio}.xlsx`);
   };
 
-  const downloadAsPDF = async () => {
+  const downloadAsPDF = async (mode: 'pedido' | 'revision') => {
     if (!order) return;
     const element = document.getElementById('monthly-order-document');
     if (!element) return;
+
     try {
-      // Ocultar botones de acción antes de capturar
+      setPdfMode(mode);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
       const actions = document.getElementById('monthly-order-actions');
       if (actions) actions.style.display = 'none';
 
       const canvas = await html2canvas(element, { scale: 2, useCORS: true });
 
       if (actions) actions.style.display = '';
+      setPdfMode(null);
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -198,9 +217,10 @@ export default function MonthlyOrderDetail() {
       }
 
       const tipoLabels: any = { aceites: 'Aceites', papeleria: 'Papeleria', limpieza: 'Limpieza', toner: 'Toner', imprenta: 'Imprenta' };
-      pdf.save(`Pedido-${tipoLabels[order.tipo]}-${order.folio}.pdf`);
+      pdf.save(`${mode === 'revision' ? 'Revision' : 'Pedido'}-${tipoLabels[order.tipo]}-${order.folio}.pdf`);
     } catch (err) {
       console.error('Error generando PDF:', err);
+      setPdfMode(null);
       alert('Error al generar PDF');
     }
   };
@@ -240,6 +260,8 @@ export default function MonthlyOrderDetail() {
 
   const showConfirmBtn = order.estado !== 'completado' && !myConfirmation &&
     (user?.rol === 'estacion' || user?.rol === 'compras' || user?.rol === 'jefe');
+
+  const hideExistencias = pdfMode === 'pedido';
 
   return (
     <div className="dashboard-container">
@@ -294,7 +316,7 @@ export default function MonthlyOrderDetail() {
                     <th>Descripción</th>
                     <th className="center">Consumibles</th>
                     <th className="center">Intercambiables</th>
-                    <th>Existencias</th>
+                    {!hideExistencias && <th>Existencias</th>}
                     <th>Unidad</th>
                     <th className="center">Cantidad</th>
                     {isEditing && <th></th>}
@@ -319,11 +341,13 @@ export default function MonthlyOrderDetail() {
                           ? <input type="checkbox" checked={item.intercambiables} onChange={e => handleChange(i, 'intercambiables', e.target.checked)} />
                           : item.intercambiables ? <CheckIcon style={{ width: 16, height: 16, color: '#34d399', display: 'block', margin: '0 auto' }} /> : null}
                       </td>
-                      <td>
-                        {isEditing
-                          ? <input type="text" value={item.existencias} onChange={e => handleChange(i, 'existencias', e.target.value)} placeholder="—" />
-                          : <span>{item.existencias}</span>}
-                      </td>
+                      {!hideExistencias && (
+                        <td>
+                          {isEditing
+                            ? <input type="text" value={item.existencias} onChange={e => handleChange(i, 'existencias', e.target.value)} placeholder="—" />
+                            : <span>{item.existencias}</span>}
+                        </td>
+                      )}
                       <td>
                         {isEditing
                           ? <input type="text" value={item.unidad} onChange={e => handleChange(i, 'unidad', e.target.value)} placeholder="pza / lt" />
@@ -373,16 +397,24 @@ export default function MonthlyOrderDetail() {
                     Volver
                   </button>
                   {['compras', 'jefe'].includes(user?.rol || '') && (
-                    <button className="btn-glass-cancel" onClick={downloadAsExcel}>
-                      <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
-                      Descargar Excel
-                    </button>
-                  )}
-                  {['compras', 'jefe'].includes(user?.rol || '') && (
-                    <button className="btn-glass-cancel" onClick={downloadAsPDF}>
-                      <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
-                      Descargar PDF
-                    </button>
+                    <>
+                      <button className="btn-glass-cancel" onClick={() => downloadAsExcel('pedido')}>
+                        <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
+                        Descargar pedido
+                      </button>
+                      <button className="btn-glass-cancel" onClick={() => downloadAsExcel('revision')}>
+                        <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
+                        Descargar revisión
+                      </button>
+                      <button className="btn-glass-cancel" onClick={() => downloadAsPDF('pedido')}>
+                        <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
+                        Descargar pedido PDF
+                      </button>
+                      <button className="btn-glass-cancel" onClick={() => downloadAsPDF('revision')}>
+                        <ArrowDownTrayIcon style={{ width: 16, height: 16 }} />
+                        Descargar revisión PDF
+                      </button>
+                    </>
                   )}
                   {canEdit && (
                     <button className="btn-glass-save" onClick={() => setIsEditing(true)}>

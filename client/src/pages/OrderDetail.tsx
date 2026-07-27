@@ -40,6 +40,7 @@ interface Order {
   descripcion: string;
   observaciones?: string;
   tipo: 'sistemas' | 'compras';
+  imagenes?: string[];
   User?: {
     nombre: string;
     estacion: string;
@@ -458,6 +459,23 @@ export const OrderDetail: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* IMÁGENES ADJUNTAS */}
+          {['compras', 'sistemas'].includes(user?.rol || '') && order.imagenes && order.imagenes.length > 0 && (
+            <div style={{ marginTop: '1.5rem', padding: '1.25rem', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1rem', fontWeight: 700 }}>Imágenes adjuntas</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                {order.imagenes.map((src, idx) => (
+                  <img
+                    key={idx}
+                    src={src}
+                    alt={`Imagen adjunta ${idx + 1}`}
+                    style={{ width: '100%', minHeight: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* BOTONES DE DESCARGA */}
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -917,8 +935,24 @@ export const OrderDetail: React.FC = () => {
                     )}
                   </td>
                 </tr>
-              </tbody>
-            </table>
+                  </tbody>
+              </table>
+
+              {order.imagenes && order.imagenes.length > 0 && (
+                <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700, color: '#1f2937' }}>Imágenes adjuntas</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+                    {order.imagenes.map((src, idx) => (
+                      <img
+                        key={idx}
+                        src={src}
+                        alt={`Adjunto ${idx + 1}`}
+                        style={{ width: '100%', minHeight: '120px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

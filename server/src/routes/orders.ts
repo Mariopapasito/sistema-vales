@@ -242,7 +242,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
     if (!['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas'].includes(userRole || ''))
       return res.status(403).json({ message: 'Only Estacion, Jefe and Sistemas can create orders' });
 
-    const { tipo, prioridad, descripcion, observaciones } = req.body;
+    const { tipo, prioridad, descripcion, observaciones, imagenes } = req.body;
     if (!['sistemas', 'compras'].includes(tipo))
       return res.status(400).json({ message: 'Invalid tipo' });
 
@@ -260,6 +260,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
       descripcion,
       observaciones,
       tipo,
+      imagenes: Array.isArray(imagenes) ? imagenes : [],
       estado: 'Sin iniciar',
       confirmadoEstacion: false,
       confirmadoProveedor: false,

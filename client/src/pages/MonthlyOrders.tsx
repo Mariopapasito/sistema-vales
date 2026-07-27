@@ -119,7 +119,7 @@ export default function MonthlyOrders() {
     XLSX.writeFile(wb, `Pedidos-Mensuales-${new Date().toLocaleDateString('es-MX')}.xlsx`);
   };
 
-  const downloadOrderAsExcel = (e: React.MouseEvent, order: MonthlyOrder) => {
+  const downloadOrderAsExcel = (e: React.MouseEvent, order: MonthlyOrder, mode: 'pedido' | 'revision' = 'pedido') => {
     e.stopPropagation();
 
     const tipoLabels: any = {
@@ -138,34 +138,41 @@ export default function MonthlyOrders() {
       [`${tipoLabels[order.tipo]} — ${fecha}`],
       [`Folio: ${order.folio}    Estación: ${order.estacion}`],
       [],
-      ['No.', 'Descripción', 'Consumibles', 'Intercambiables', 'Existencias', 'Unidad', 'Cantidad']
+      mode === 'revision'
+        ? ['No.', 'Descripción', 'Consumibles', 'Intercambiables', 'Existencias', 'Unidad', 'Cantidad']
+        : ['No.', 'Descripción', 'Consumibles', 'Intercambiables', 'Unidad', 'Cantidad']
     ];
 
-    const itemsData = order.items.map((item, idx) => [
-      idx + 1,
-      item.descripcion,
-      item.consumibles ? 'Sí' : 'No',
-      item.intercambiables ? 'Sí' : 'No',
-      item.existencias,
-      item.unidad,
-      item.cantidad > 0 ? item.cantidad : ''
-    ]);
+    const itemsData = order.items.map((item, idx) => {
+      const row: Array<string | number> = [
+        idx + 1,
+        item.descripcion,
+        item.consumibles ? 'Sí' : 'No',
+        item.intercambiables ? 'Sí' : 'No'
+      ];
+
+      if (mode === 'revision') {
+        row.push(item.existencias);
+      }
+      row.push(item.unidad);
+      row.push(item.cantidad > 0 ? item.cantidad : '');
+      return row;
+    });
 
     const ws = XLSX.utils.aoa_to_sheet([...headerData, ...itemsData]);
-    ws['!cols'] = [
-      { wch: 5 }, { wch: 35 }, { wch: 12 },
-      { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }
-    ];
+    ws['!cols'] = mode === 'revision'
+      ? [{ wch: 5 }, { wch: 35 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }]
+      : [{ wch: 5 }, { wch: 35 }, { wch: 12 }, { wch: 15 }, { wch: 10 }, { wch: 10 }];
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
+      { s: { r: 0, c: 0 }, e: { r: 0, c: mode === 'revision' ? 6 : 5 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: mode === 'revision' ? 6 : 5 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: mode === 'revision' ? 6 : 5 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: mode === 'revision' ? 6 : 5 } },
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Pedido');
-    XLSX.writeFile(wb, `${tipoLabels[order.tipo].replace(/ /g, '-')}-${order.folio}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, mode === 'revision' ? 'Revision' : 'Pedido');
+    XLSX.writeFile(wb, `${mode === 'revision' ? 'Revision' : 'Pedido'}-${tipoLabels[order.tipo].replace(/ /g, '-')}-${order.folio}.xlsx`);
   };
 
   if (loading) {
@@ -316,9 +323,14 @@ export default function MonthlyOrders() {
 
                         {/* Download button */}
                         {['compras', 'jefe'].includes(user?.rol || '') && (
-                          <button className="btn-download-card" style={{ marginTop: '0.5rem' }} onClick={(e) => downloadOrderAsExcel(e, order)}>
-                            <ArrowDownTrayIcon style={{ width: 14, height: 14 }} /> Descargar
-                          </button>
+                          <>
+                            <button className="btn-download-card" style={{ marginTop: '0.5rem' }} onClick={(e) => downloadOrderAsExcel(e, order, 'pedido')}>
+                              <ArrowDownTrayIcon style={{ width: 14, height: 14 }} /> Descargar pedido
+                            </button>
+                            <button className="btn-download-card" style={{ marginTop: '0.5rem' }} onClick={(e) => downloadOrderAsExcel(e, order, 'revision')}>
+                              <ArrowDownTrayIcon style={{ width: 14, height: 14 }} /> Descargar revisión
+                            </button>
+                          </>
                         )}
 
                         <div className="order-card-arrow">
