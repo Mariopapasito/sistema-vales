@@ -92,7 +92,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
         {/* Logo */}
         <div className="sidebar-logo-top">
-          <img src="/sidebar-logo.png" alt="La Villita" className="sidebar-logo-img" />
+          <img src="/LOGO BLANCO.PNG" alt="La Villita" className="sidebar-logo-img" />
         </div>
 
         {/* Info del usuario */}
@@ -129,8 +129,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="nav-text">Vales</span>
           </button>
 
-          {/* Create Order - Estacion + roles similares + jefe + sistemas */}
-          {['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas'].includes(user?.rol || '') && (
+          {/* Create Order - Estacion + roles similares + jefe + sistemas + compras */}
+          {['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas', 'compras'].includes(user?.rol || '') && (
             <button ref={refIfActive('/create-order')} onClick={() => handleNavClick('/create-order')} className={navClass('/create-order')}>
               <PlusCircleIcon className="nav-icon" />
               <span className="nav-text">Crear Vale</span>

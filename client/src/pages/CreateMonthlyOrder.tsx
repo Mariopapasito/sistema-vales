@@ -242,7 +242,6 @@ export default function CreateMonthlyOrder() {
                     <th>Descripción</th>
                     <th className="center">Consumibles</th>
                     <th className="center">Intercambiables</th>
-                    <th>Existencias</th>
                     <th>Unidad</th>
                     <th className="center">Cantidad</th>
                     <th className="center">—</th>
@@ -260,9 +259,6 @@ export default function CreateMonthlyOrder() {
                       </td>
                       <td className="center">
                         <input type="checkbox" checked={item.intercambiables} onChange={e => handleChange(i, 'intercambiables', e.target.checked)} />
-                      </td>
-                      <td>
-                        <input type="text" value={item.existencias} onChange={e => handleChange(i, 'existencias', e.target.value)} placeholder="—" />
                       </td>
                       <td>
                         <input type="text" value={item.unidad} onChange={e => handleChange(i, 'unidad', e.target.value)} placeholder="pza / lt / kg" />
@@ -314,7 +310,7 @@ export default function CreateMonthlyOrder() {
               </button>
               <button className="btn-glass-save" onClick={handleSave} disabled={loading}>
                 <CheckIcon style={{ width: 16, height: 16 }} />
-                {loading ? 'Guardando...' : 'Guardar Pedido'}
+                {loading ? 'Guardando...' : 'Hacer Pedido'}
               </button>
             </div>
           </div>

@@ -239,8 +239,8 @@ router.post('/', protect, async (req: AuthRequest, res) => {
     const userId = req.userId;
     const userEstacion = req.user?.estacion;
 
-    if (!['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas'].includes(userRole || ''))
-      return res.status(403).json({ message: 'Only Estacion, Jefe and Sistemas can create orders' });
+    if (!['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas', 'compras'].includes(userRole || ''))
+      return res.status(403).json({ message: 'Only Estacion, Jefe, Sistemas and Compras can create orders' });
 
     const { tipo, prioridad, descripcion, observaciones, imagenes } = req.body;
     if (!['sistemas', 'compras'].includes(tipo))
@@ -248,6 +248,9 @@ router.post('/', protect, async (req: AuthRequest, res) => {
 
     if (userRole === 'sistemas' && tipo !== 'compras')
       return res.status(403).json({ message: 'Sistemas can only create compras orders' });
+
+    if (userRole === 'compras' && tipo !== 'sistemas')
+      return res.status(403).json({ message: 'Compras can only create sistemas orders' });
 
     const lastOrder = await Order.findOne({ order: [['id', 'DESC']] });
     const newFolio = `ORD-${String(1001 + (lastOrder?.id || 0)).padStart(5, '0')}`;

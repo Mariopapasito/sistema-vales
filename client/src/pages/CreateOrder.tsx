@@ -19,7 +19,7 @@ export const CreateOrder: React.FC = () => {
     localizacion: user?.estacion || '',
     descripcion: '',
     observaciones: '',
-    tipo: user?.rol === 'sistemas' ? 'compras' : 'sistemas',
+    tipo: user?.rol === 'sistemas' ? 'compras' : user?.rol === 'compras' ? 'sistemas' : 'sistemas',
   });
   const [imagenes, setImagenes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -96,6 +96,10 @@ export const CreateOrder: React.FC = () => {
             {user?.rol === 'sistemas' ? (
               <div className="w-full p-3 border border-gray-200 rounded bg-gray-50 text-gray-700 font-semibold">
                 Compras
+              </div>
+            ) : user?.rol === 'compras' ? (
+              <div className="w-full p-3 border border-gray-200 rounded bg-gray-50 text-gray-700 font-semibold">
+                Sistemas
               </div>
             ) : (
               <select
