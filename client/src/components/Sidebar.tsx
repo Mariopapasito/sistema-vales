@@ -153,6 +153,14 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
           )}
 
+          {/* Bitácoras - Jefe & Estación */}
+          {(user?.rol === 'jefe' || user?.rol === 'estacion') && (
+            <button ref={refIfActive('/bitacoras')} onClick={() => handleNavClick('/bitacoras')} className={navClass('/bitacoras')}>
+              <DocumentChartBarIcon className="nav-icon" />
+              <span className="nav-text">Bitácoras</span>
+            </button>
+          )}
+
           {/* Reports - Jefe & Sistemas */}
           {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
             <button ref={refIfActive('/reports')} onClick={() => handleNavClick('/reports')} className={navClass('/reports')}>

@@ -13,6 +13,7 @@ import MonthlyOrders from './pages/MonthlyOrders';
 import CreateMonthlyOrder from "./pages/CreateMonthlyOrder";
 import MonthlyOrderDetail from "./pages/MonthlyOrderDetail";
 import { Reports } from "./pages/Reports";
+import Bitacoras from './pages/Bitacoras';
 import ActivityLogs from './pages/ActivityLogs';
 import { restoreSession } from './store/slices/authSlice';
 import { scheduleTokenRefresh } from './services/tokenService';
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/create-monthly-order" element={<CreateMonthlyOrder />} />
           <Route path="/monthly-order/:id" element={<MonthlyOrderDetail />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/bitacoras" element={<Bitacoras />} />
           <Route path="/activity-logs" element={<ActivityLogs />} />
         </Route>
 

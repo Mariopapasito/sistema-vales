@@ -11,6 +11,7 @@ class ReportPhoto extends Model {
   public titulo!: string;
   public descripcion?: string;
   public imagenes!: ImageData[];
+  public tipo!: 'estacion' | 'jefe';
   public userId!: number;
   public createdAt!: Date;
   public updatedAt!: Date;
@@ -36,6 +37,11 @@ ReportPhoto.init(
       allowNull: false,
       defaultValue: [],
       comment: 'Array de objetos con { url: string, descripcion: string }',
+    },
+    tipo: {
+      type: DataTypes.ENUM('estacion', 'jefe'),
+      allowNull: false,
+      defaultValue: 'estacion',
     },
     userId: {
       type: DataTypes.INTEGER,

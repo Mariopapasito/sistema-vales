@@ -24,26 +24,41 @@ const upload = multer({
 router.get('/', protect, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
-    
-    if (!['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) {
+    const requestedTipo = typeof req.query.tipo === 'string' ? req.query.tipo : undefined;
+
+    if (!['sistemas', 'compras', 'jefe', 'estacion'].includes(user?.rol || '')) {
       return res.status(403).json({ error: 'No tienes permisos para ver reportes' });
     }
 
-    const whereClause = user?.rol === 'jefe' ? {} : { userId: user?.id };
+    const whereClause: any = {};
+
+    if (requestedTipo && ['estacion', 'jefe'].includes(requestedTipo)) {
+      whereClause.tipo = requestedTipo;
+    }
+
+    if (user?.rol === 'estacion') {
+      whereClause.userId = user.id;
+      whereClause.tipo = 'estacion';
+    } else if (user?.rol === 'jefe' && !requestedTipo) {
+      whereClause.tipo = 'estacion';
+    } else if (user?.rol === 'jefe' && requestedTipo === 'jefe') {
+      whereClause.tipo = 'jefe';
+    } else if (user?.rol !== 'jefe' && user?.rol !== 'sistemas' && user?.rol !== 'compras') {
+      whereClause.userId = user?.id;
+    }
 
     const reports = await ReportPhoto.findAll({
       where: whereClause,
-      attributes: ['id', 'titulo', 'descripcion', 'userId', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'titulo', 'descripcion', 'tipo', 'userId', 'createdAt', 'updatedAt'],
       include: [
         {
           model: User,
-          attributes: ['id', 'nombre', 'rol'],
+          attributes: ['id', 'nombre', 'rol', 'estacion'],
         },
       ],
       order: [['createdAt', 'DESC']],
     });
 
-    // Añadir conteo de imágenes sin devolver los datos
     const reportsWithCount = reports.map((r: any) => {
       const plain = r.get({ plain: true });
       return plain;
@@ -61,18 +76,25 @@ router.get('/:id', protect, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
 
-    if (!['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) {
+    if (!['sistemas', 'compras', 'jefe', 'estacion'].includes(user?.rol || '')) {
       return res.status(403).json({ error: 'No tienes permisos' });
     }
 
     const report = await ReportPhoto.findByPk(req.params.id, {
-      include: [{ model: User, attributes: ['id', 'nombre', 'rol'] }],
+      include: [{ model: User, attributes: ['id', 'nombre', 'rol', 'estacion'] }],
     });
 
     if (!report) return res.status(404).json({ error: 'Reporte no encontrado' });
 
-    // Jefe ve todos; otros solo ven los suyos
-    if (user?.rol !== 'jefe' && (report as any).userId !== user?.id) {
+    if (user?.rol === 'estacion' && (report as any).userId !== user?.id) {
+      return res.status(403).json({ error: 'No tienes permisos' });
+    }
+
+    if (user?.rol !== 'jefe' && user?.rol !== 'sistemas' && user?.rol !== 'compras' && user?.rol !== 'estacion') {
+      return res.status(403).json({ error: 'No tienes permisos' });
+    }
+
+    if (user?.rol !== 'jefe' && user?.rol !== 'sistemas' && user?.rol !== 'compras' && (report as any).userId !== user?.id) {
       return res.status(403).json({ error: 'No tienes permisos' });
     }
 
@@ -87,13 +109,20 @@ router.get('/:id', protect, async (req: Request, res: Response) => {
 router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
-    
-    if (!['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) {
+    const requestedTipo = typeof req.body.tipo === 'string' ? req.body.tipo : 'estacion';
+
+    if (!['sistemas', 'compras', 'jefe', 'estacion'].includes(user?.rol || '')) {
       return res.status(403).json({ error: 'No tienes permisos para crear reportes' });
     }
 
     if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
       return res.status(400).json({ error: 'Al menos una imagen es requerida' });
+    }
+
+    const tipo = user?.rol === 'estacion' ? 'estacion' : requestedTipo === 'jefe' ? 'jefe' : 'estacion';
+
+    if (user?.rol === 'estacion' && tipo !== 'estacion') {
+      return res.status(403).json({ error: 'Las estaciones solo pueden enviar bitácoras de estación' });
     }
 
     const { titulo, descripcion, imageDescriptions } = req.body;
@@ -111,7 +140,6 @@ router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res
       }
     }
 
-    // Convertir archivos a base64 para almacenamiento persistente
     const imagenes = (req.files as Express.Multer.File[]).map((file, index) => ({
       url: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
       descripcion: descriptions[index] || '',
@@ -121,6 +149,7 @@ router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res
       titulo,
       descripcion: descripcion || '',
       imagenes,
+      tipo,
       userId: user?.id || 0,
     });
 
@@ -128,7 +157,7 @@ router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res
       include: [
         {
           model: User,
-          attributes: ['id', 'nombre', 'rol'],
+          attributes: ['id', 'nombre', 'rol', 'estacion'],
         },
       ],
     });
