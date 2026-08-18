@@ -173,9 +173,16 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
       ALTER TABLE users MODIFY COLUMN estacion VARCHAR(255) NULL
     `).catch(() => { /* already up to date */ });
     // Ensure report_photos stores the bitácora category for stations and bosses
-    await sequelize.query(`
-      ALTER TABLE report_photos ADD COLUMN IF NOT EXISTS tipo ENUM('estacion','jefe') NOT NULL DEFAULT 'estacion'
-    `).catch(() => { /* already up to date */ });
+    const reportPhotoCols = await sequelize.query('SHOW COLUMNS FROM report_photos').catch(() => [] as any[]);
+    const hasTipoColumn = Array.isArray(reportPhotoCols[0]) && reportPhotoCols[0].some((col: any) => col.Field === 'tipo');
+    if (!hasTipoColumn) {
+      await sequelize.query(`
+        ALTER TABLE report_photos ADD COLUMN tipo ENUM('estacion','jefe') NOT NULL DEFAULT 'estacion'
+      `);
+      await sequelize.query(`
+        UPDATE report_photos SET tipo = 'estacion' WHERE tipo IS NULL OR tipo = ''
+      `);
+    }
     // Ensure notifications.tipo ENUM includes COMMENT
     await sequelize.query(`
       ALTER TABLE notifications MODIFY COLUMN tipo ENUM('NEW_ORDER','ORDER_STATUS_CHANGED','CALENDAR_EVENT','SYSTEM','MENTION','COMMENT') NOT NULL
