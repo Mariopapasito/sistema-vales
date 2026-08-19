@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -45,12 +45,21 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   resultCount,
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [searchText, setSearchText] = useState(filters.busqueda);
+
+  useEffect(() => {
+    setSearchText(filters.busqueda);
+  }, [filters.busqueda]);
 
   const hasActiveFilters = Object.entries(filters).some(([, v]) => v !== '');
   const activeCount = Object.values(filters).filter(v => v !== '').length;
 
   const set = (key: keyof FilterValues, value: string) =>
     onChange({ ...filters, [key]: value });
+
+  const applySearch = () => {
+    onChange({ ...filters, busqueda: searchText });
+  };
 
   const clearAll = () => onChange(emptyFilters);
 
@@ -63,12 +72,18 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           <input
             type="text"
             placeholder="Buscar por folio, descripción, estación..."
-            value={filters.busqueda}
-            onChange={e => set('busqueda', e.target.value)}
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') applySearch();
+            }}
             className="search-input"
           />
-          {filters.busqueda && (
-            <button className="clear-btn" onClick={() => set('busqueda', '')}>
+          {searchText && (
+            <button className="clear-btn" onClick={() => {
+              setSearchText('');
+              onChange({ ...filters, busqueda: '' });
+            }}>
               <XMarkIcon style={{ width: 16, height: 16 }} />
             </button>
           )}

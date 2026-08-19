@@ -71,7 +71,6 @@ export const Dashboard: React.FC = () => {
   const [selectedHistorial, setSelectedHistorial] = useState<any[] | undefined>();
   const [filters, setFilters] = useState<FilterValues>(emptyFilters);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs for scrolling to sections
   const sinIniciarRef = useRef<HTMLDivElement>(null);
@@ -94,19 +93,14 @@ export const Dashboard: React.FC = () => {
   // Signature modal state
   const [sigPending, setSigPending] = useState<{ orderId: number; newState: string; type: 'sistemas' | 'estacion' } | null>(null);
 
-  // Debounced filters: text search delays 400ms, other filters apply immediately
+  // Busca solo cuando se confirma con Enter en el campo de búsqueda.
   const [debouncedFilters, setDebouncedFilters] = useState<FilterValues>(emptyFilters);
 
   const handleFiltersChange = useCallback((next: FilterValues) => {
     setFilters(next);
     setCurrentPage(1); // reset to page 1 on filter change
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (next.busqueda !== filters.busqueda) {
-      debounceRef.current = setTimeout(() => setDebouncedFilters(next), 400);
-    } else {
-      setDebouncedFilters(next);
-    }
-  }, [filters.busqueda]);
+    setDebouncedFilters(next);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
