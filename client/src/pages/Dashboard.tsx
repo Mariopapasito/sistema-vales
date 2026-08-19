@@ -54,6 +54,20 @@ const emptyFilters: FilterValues = {
   fechaHasta: '',
 };
 
+const DASHBOARD_STATE_KEY = 'dashboard-state-v1';
+
+const readDashboardState = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(DASHBOARD_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 // Returns visual state for dual-confirmation logic
 function getDisplayState(order: Order) {
   if (order.estado !== 'Completada') return order.estado;
@@ -66,10 +80,17 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<'sistemas' | 'compras' | 'todos'>('todos');
+  const savedDashboardState = readDashboardState();
+  const [selectedTab, setSelectedTab] = useState<'sistemas' | 'compras' | 'todos'>(() => {
+    const savedTab = savedDashboardState?.selectedTab;
+    return savedTab === 'sistemas' || savedTab === 'compras' ? savedTab : 'todos';
+  });
   const [historialOpen, setHistorialOpen] = useState(false);
   const [selectedHistorial, setSelectedHistorial] = useState<any[] | undefined>();
-  const [filters, setFilters] = useState<FilterValues>(emptyFilters);
+  const [filters, setFilters] = useState<FilterValues>(() => {
+    const savedFilters = savedDashboardState?.filters;
+    return savedFilters && typeof savedFilters === 'object' ? { ...emptyFilters, ...savedFilters } : emptyFilters;
+  });
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Refs for scrolling to sections
@@ -85,21 +106,51 @@ export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<{ sinIniciar: number; enProceso: number; completadas: number; total: number } | null>(null);
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const savedPage = Number(savedDashboardState?.currentPage || 1);
+    return Number.isFinite(savedPage) && savedPage > 0 ? savedPage : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const LIMIT = 20;
+
+  const persistDashboardState = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const snapshot = {
+      selectedTab,
+      currentPage,
+      filters,
+      scrollY: window.scrollY,
+    };
+    window.sessionStorage.setItem(DASHBOARD_STATE_KEY, JSON.stringify(snapshot));
+  }, [selectedTab, currentPage, filters]);
 
   // Signature modal state
   const [sigPending, setSigPending] = useState<{ orderId: number; newState: string; type: 'sistemas' | 'estacion' } | null>(null);
 
   // Busca solo cuando se confirma con Enter en el campo de búsqueda.
-  const [debouncedFilters, setDebouncedFilters] = useState<FilterValues>(emptyFilters);
+  const [debouncedFilters, setDebouncedFilters] = useState<FilterValues>(() => {
+    const savedFilters = savedDashboardState?.filters;
+    return savedFilters && typeof savedFilters === 'object' ? { ...emptyFilters, ...savedFilters } : emptyFilters;
+  });
 
   const handleFiltersChange = useCallback((next: FilterValues) => {
     setFilters(next);
     setCurrentPage(1); // reset to page 1 on filter change
     setDebouncedFilters(next);
+  }, []);
+
+  useEffect(() => {
+    persistDashboardState();
+  }, [persistDashboardState]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const savedState = readDashboardState();
+    const savedScroll = Number(savedState?.scrollY || 0);
+    if (Number.isFinite(savedScroll)) {
+      window.scrollTo({ top: savedScroll, behavior: 'auto' });
+    }
   }, []);
 
   useEffect(() => {
@@ -234,7 +285,10 @@ export const Dashboard: React.FC = () => {
     const cardClass = isPorConfirmar ? 'order-card por-confirmar' : `order-card ${colorClass}`;
 
     return (
-      <div key={order.id} className={cardClass} onClick={() => navigate(`/orders/${order.id}`)} style={{ cursor: 'pointer' }}>
+      <div key={order.id} className={cardClass} onClick={() => {
+        persistDashboardState();
+        navigate(`/orders/${order.id}`);
+      }} style={{ cursor: 'pointer' }}>
         <div className="card-header">
           <div>
             <p className="card-folio">{order.folio}</p>
@@ -288,8 +342,11 @@ export const Dashboard: React.FC = () => {
 
   if (loading) return (
     <main className="dashboard-main">
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#64748b', fontSize: '1.2rem', gap: '0.5rem' }}>
-        <ArrowPathIcon style={{ width: 20, height: 20 }} /> Cargando órdenes...
+      <div className="brand-loading-wrapper">
+        <div className="brand-loading-shell">
+          <div className="brand-loading-ring" />
+          <img src="/logo.png" alt="La Villita" className="brand-loading-logo" />
+        </div>
       </div>
     </main>
   );

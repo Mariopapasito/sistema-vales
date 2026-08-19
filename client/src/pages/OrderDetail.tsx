@@ -72,6 +72,7 @@ export const OrderDetail: React.FC = () => {
   const [isEditingVale, setIsEditingVale] = useState(false);
   const [editedOrder, setEditedOrder] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Get API base URL
   const getApiBaseURL = () => {
@@ -95,6 +96,17 @@ export const OrderDetail: React.FC = () => {
     };
     fetchOrder();
   }, [id]);
+
+  useEffect(() => {
+    if (!previewImage) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPreviewImage(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewImage]);
 
   const handleDelete = async () => {
     if (!order) return;
@@ -243,7 +255,12 @@ export const OrderDetail: React.FC = () => {
   if (loading) {
     return (
       <main style={{ flex: 1, padding: '2rem', color: '#64748b' }}>
-        <ArrowPathIcon style={{ width: 20, height: 20 }} /> Cargando vale...
+        <div className="brand-loading-wrapper">
+          <div className="brand-loading-shell">
+            <div className="brand-loading-ring" />
+            <img src="/logo.png" alt="La Villita" className="brand-loading-logo" />
+          </div>
+        </div>
       </main>
     );
   }
@@ -322,6 +339,65 @@ export const OrderDetail: React.FC = () => {
 
   return (
     <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem 2rem', width: '100%' }}>
+        {previewImage && (
+          <div
+            onClick={() => setPreviewImage(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1.5rem',
+              zIndex: 4000,
+            }}
+          >
+            <div
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                position: 'relative',
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                background: 'white',
+                borderRadius: '16px',
+                padding: '0.75rem',
+                boxShadow: '0 30px 60px rgba(15, 23, 42, 0.35)',
+              }}
+            >
+              <button
+                onClick={() => setPreviewImage(null)}
+                style={{
+                  position: 'absolute',
+                  top: '0.75rem',
+                  right: '0.75rem',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  color: 'white',
+                  border: 'none',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '999px',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+              <img
+                src={previewImage}
+                alt="Vista previa ampliada"
+                style={{
+                  display: 'block',
+                  maxWidth: '90vw',
+                  maxHeight: '85vh',
+                  objectFit: 'contain',
+                  borderRadius: '12px',
+                }}
+              />
+            </div>
+          </div>
+        )}
         <div  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <button
@@ -470,7 +546,8 @@ export const OrderDetail: React.FC = () => {
                     key={idx}
                     src={src}
                     alt={`Imagen adjunta ${idx + 1}`}
-                    style={{ width: '100%', minHeight: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                    onClick={() => setPreviewImage(src)}
+                    style={{ width: '100%', minHeight: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #cbd5e1', cursor: 'zoom-in' }}
                   />
                 ))}
               </div>

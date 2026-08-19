@@ -38,3 +38,69 @@ select {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@keyframes brandPulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.96);
+    opacity: 0.7;
+  }
+}
+
+@keyframes brandOrbit {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.brand-loading-shell {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: brandPulse 1.8s ease-in-out infinite;
+}
+
+.brand-loading-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(59, 130, 246, 0.22);
+  border-top-color: rgba(59, 130, 246, 0.9);
+  border-right-color: rgba(16, 185, 129, 0.8);
+  animation: brandOrbit 2.2s linear infinite;
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.18);
+}
+
+.brand-loading-logo {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(15, 23, 42, 0.12));
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 10px;
+}
+
+.brand-loading-wrapper {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
