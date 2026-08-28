@@ -51,7 +51,6 @@ export default function MonthlyOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editItems, setEditItems] = useState<Item[]>([]);
-  const [stationEditItems, setStationEditItems] = useState<Item[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pdfMode, setPdfMode] = useState<'pedido' | 'revision' | null>(null);
@@ -79,8 +78,6 @@ export default function MonthlyOrderDetail() {
       const res = await api.get(`/monthly-orders/${id}`);
       setOrder(res.data.data);
       setEditItems(res.data.data.items || []);
-      // keep a separate copy for estaciones to fill 'existencias'
-      setStationEditItems(JSON.parse(JSON.stringify(res.data.data.items || [])));
     } catch (e) {
       console.error(e);
     } finally {
@@ -108,31 +105,6 @@ export default function MonthlyOrderDetail() {
     setEditItems(next);
   };
 
-  // Station-only: edit existencias without enabling full edit mode
-  const handleStationExistenciasChange = (index: number, value: string) => {
-    if (!stationEditItems) return;
-    const next = [...stationEditItems];
-    next[index] = next[index] || { descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0 };
-    next[index].existencias = value;
-    setStationEditItems(next);
-  };
-
-  const saveStationExistencias = async () => {
-    if (!order || !stationEditItems) return;
-    try {
-      setSaving(true);
-      // Merge updated existencias into current items structure
-      const merged = order.items.map((it, idx) => ({ ...it, existencias: stationEditItems[idx]?.existencias || it.existencias || '' }));
-      await api.put(`/monthly-orders/${order.id}`, { items: merged, estado: order.estado });
-      await fetchOrder();
-      alert('Existencias guardadas correctamente');
-    } catch (err: any) {
-      console.error('Error guardando existencias:', err);
-      alert('Error al guardar existencias: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleSave = async () => {
     try {
@@ -374,12 +346,7 @@ export default function MonthlyOrderDetail() {
                         <td>
                           {isEditing
                             ? <input type="text" value={item.existencias} onChange={e => handleChange(i, 'existencias', e.target.value)} placeholder="—" />
-                            : (user?.rol === 'estacion' && order && order.estado !== 'completado')
-                              ? (
-                                // estación view: show editable existencias inputs (stationEditItems)
-                                <input type="text" value={(stationEditItems && stationEditItems[i]) ? stationEditItems[i].existencias : item.existencias || ''} onChange={e => handleStationExistenciasChange(i, e.target.value)} placeholder="—" />
-                              )
-                              : <span>{item.existencias}</span>}
+                            : <span>{item.existencias}</span>}
                         </td>
                       )}
                       <td>
@@ -411,15 +378,6 @@ export default function MonthlyOrderDetail() {
               <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1rem' }}>
                 <button type="button" className="btn-glass-cancel" onClick={() => addRows(5)}>+ 5 filas</button>
                 <button type="button" className="btn-glass-cancel" onClick={() => addRows(10)}>+ 10 filas</button>
-              </div>
-            )}
-
-            {/* Station save existencias */}
-            {user?.rol === 'estacion' && order && order.estado !== 'completado' && (
-              <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1rem' }}>
-                <button type="button" className="btn-glass-save" onClick={saveStationExistencias} disabled={saving}>
-                  {saving ? 'Guardando existencias...' : 'Guardar existencias'}
-                </button>
               </div>
             )}
 
