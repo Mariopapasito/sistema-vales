@@ -825,6 +825,49 @@ html, body, #root {
 
 .btn-confirm:hover { opacity: 0.85; }
 
+.btn-forward {
+  width: 100%;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.btn-forward:hover:not(:disabled) {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-forward:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.order-card-restored {
+  animation: restored-order-highlight 1.6s ease-out;
+}
+
+@keyframes restored-order-highlight {
+  0%, 35% {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35), 0 14px 30px rgba(15, 23, 42, 0.18);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: inherit;
+    transform: none;
+  }
+}
+
 
 /* Pagination */
 .pagination-container {

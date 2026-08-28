@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/OrderDetail.css';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
@@ -64,6 +64,7 @@ interface Order {
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const [order, setOrder] = useState<Order | null>(null);
@@ -123,6 +124,14 @@ export const OrderDetail: React.FC = () => {
   };
 
   const canDelete = ['jefe', 'sistemas'].includes(user?.rol || '');
+
+  const handleBack = () => {
+    if ((location.state as { fromDashboard?: boolean } | null)?.fromDashboard) {
+      navigate(-1);
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   const downloadPDF = async (docType: 'vale' | 'report') => {
     if (!order) return;
@@ -401,7 +410,7 @@ export const OrderDetail: React.FC = () => {
         <div  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={handleBack}
               style={{
                 padding: '0.6rem 1.2rem',
                 background: '#0f172a',

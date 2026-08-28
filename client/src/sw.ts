@@ -36,7 +36,9 @@ registerRoute(
 const API_CACHE = 'api-cache';
 registerRoute(
   ({ url, request }) =>
-    url.pathname.startsWith('/api/') && request.method === 'GET',
+    url.pathname.startsWith('/api/') &&
+    request.method === 'GET' &&
+    !request.headers.has('Authorization'),
   new NetworkFirst({
     cacheName: API_CACHE,
     networkTimeoutSeconds: 5,
@@ -45,6 +47,12 @@ registerRoute(
     ],
   })
 );
+
+// Versiones anteriores guardaban respuestas autenticadas con la misma llave para
+// distintos usuarios. Borrarlas evita mostrar conteos u órdenes obsoletos.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(caches.delete(API_CACHE));
+});
 
 // SPA navigation: serve index.html offline
 registerRoute(

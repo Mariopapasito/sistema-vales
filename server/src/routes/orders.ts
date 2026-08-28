@@ -80,7 +80,7 @@ router.get('/conversations', protect, async (req: AuthRequest, res) => {
   }
 });
 
-// GET /orders/stats — global counts by status (role-filtered)
+// GET /orders/stats — counts by status using the same role/search filters as the list
 router.get('/stats', protect, async (req: AuthRequest, res) => {  try {
     const userRole = req.user?.rol;
     const userId = req.userId;
@@ -97,6 +97,46 @@ router.get('/stats', protect, async (req: AuthRequest, res) => {  try {
     } else if (userRole === 'compras') where.tipo = 'compras';
     else if (userRole === 'jefe') { /* sees all */ }
     else return res.status(403).json({ message: `Unknown role: ${userRole}` });
+
+    const { busqueda, folio, estado, prioridad, tipo, estacion, fechaDesde, fechaHasta } = req.query;
+
+    if (folio) where.folio = { [Op.like]: `%${folio}%` };
+    if (estado) where.estado = estado;
+    if (prioridad) where.prioridad = prioridad;
+    if (tipo && ['sistemas', 'compras'].includes(tipo as string)) {
+      // El filtro nunca puede ampliar lo que permite el rol.
+      if (userRole === 'compras' && tipo !== 'compras') where.id = -1;
+      else where.tipo = tipo;
+    }
+    if (estacion) where.localizacion = { [Op.like]: `%${estacion}%` };
+
+    if (fechaDesde || fechaHasta) {
+      where.createdAt = {};
+      if (fechaDesde) where.createdAt[Op.gte] = new Date(fechaDesde as string);
+      if (fechaHasta) {
+        const hasta = new Date(fechaHasta as string);
+        hasta.setHours(23, 59, 59, 999);
+        where.createdAt[Op.lte] = hasta;
+      }
+    }
+
+    if (busqueda) {
+      const term = `%${busqueda}%`;
+      const searchOr = [
+        { folio: { [Op.like]: term } },
+        { descripcion: { [Op.like]: term } },
+        { localizacion: { [Op.like]: term } },
+      ];
+      if (where[Op.or]) {
+        where[Op.and] = [
+          { [Op.or]: where[Op.or] },
+          { [Op.or]: searchOr },
+        ];
+        delete where[Op.or];
+      } else {
+        where[Op.or] = searchOr;
+      }
+    }
 
     const [sinIniciar, enProceso, completadas] = await Promise.all([
       Order.count({ where: { ...where, estado: 'Sin iniciar' } }),
@@ -141,7 +181,13 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     if (folio) where.folio = { [Op.like]: `%${folio}%` };
     if (estado) where.estado = estado;
     if (prioridad) where.prioridad = prioridad;
-    if (tipo && userRole === 'jefe') where.tipo = tipo;
+    // El filtro de tipo siempre se aplica dentro de los permisos base del rol.
+    // Esto evita filtrar la pestaña después de paginar y ocultar resultados válidos.
+    if (tipo && ['sistemas', 'compras'].includes(tipo as string)) {
+      // El filtro nunca puede ampliar lo que permite el rol.
+      if (userRole === 'compras' && tipo !== 'compras') where.id = -1;
+      else where.tipo = tipo;
+    }
     if (estacion) where.localizacion = { [Op.like]: `%${estacion}%` };
 
     // Date range filter
@@ -391,6 +437,113 @@ router.patch('/:id/estado', protect, async (req: AuthRequest, res) => {
     res.json(order);
   } catch (error: any) {
     res.status(500).json({ message: 'Error updating status' });
+  }
+});
+
+// PATCH - Reenviar un vale entre las bandejas de Sistemas y Compras
+router.patch('/:id/reenviar', protect, async (req: AuthRequest, res) => {
+  try {
+    const userRole = req.user?.rol;
+    const { tipo } = req.body as { tipo?: 'sistemas' | 'compras' };
+
+    if (!['sistemas', 'compras'].includes(userRole || '')) {
+      return res.status(403).json({ message: 'Solo Sistemas y Compras pueden reenviar vales' });
+    }
+
+    if (!tipo || !['sistemas', 'compras'].includes(tipo)) {
+      return res.status(400).json({ message: 'El destino debe ser sistemas o compras' });
+    }
+
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Vale no encontrado' });
+
+    // Cada área únicamente puede reenviar los vales que están en su propia bandeja.
+    if (order.tipo !== userRole) {
+      return res.status(403).json({ message: 'Solo el área responsable actual puede reenviar este vale' });
+    }
+
+    if (tipo === order.tipo) {
+      return res.status(400).json({ message: 'El vale ya pertenece al área seleccionada' });
+    }
+
+    const tipoAnterior = order.tipo;
+    const ahora = new Date();
+    const historial = [...(order.historialCambios || [])];
+    historial.push({
+      quien: req.user?.nombre,
+      rol: userRole,
+      accion: `Reenvió el vale de ${tipoAnterior === 'sistemas' ? 'Sistemas' : 'Compras'} a ${tipo === 'sistemas' ? 'Sistemas' : 'Compras'}`,
+      tipoAnterior,
+      tipoNuevo: tipo,
+      estado: order.estado,
+      timestamp: ahora.toISOString(),
+      hora: ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    });
+
+    order.tipo = tipo;
+    order.historialCambios = historial;
+    await order.save();
+
+    // Los vales que llegan a Sistemas necesitan su orden de trabajo.
+    if (tipo === 'sistemas') {
+      const existingWorkReport = await WorkReport.findOne({ where: { orderId: order.id } });
+      if (!existingWorkReport) {
+        await WorkReport.create({
+          number: `WR-${String(order.id).padStart(4, '0')}`,
+          orderId: order.id,
+          createdById: req.userId,
+          assignedToId: req.userId,
+          station: order.localizacion || '',
+          faultDescription: order.descripcion,
+          attendedBy: '',
+          completed: order.estado === 'Completada',
+        });
+      }
+    }
+
+    logActivity({
+      req,
+      usuarioId: req.userId,
+      usuarioNombre: req.user?.nombre,
+      usuarioRol: userRole,
+      accion: 'ORDEN_REENVIADA',
+      entidad: 'orden',
+      entidadId: order.id,
+      detalle: `Folio: ${order.folio} | ${tipoAnterior} → ${tipo} | Estado conservado: ${order.estado}`,
+    });
+
+    try {
+      const ns = new NotificationService();
+      await ns.notifyByRoles([tipo, 'jefe'], {
+        tipo: 'SYSTEM',
+        titulo: '📨 Vale reenviado',
+        mensaje: `${req.user?.nombre} reenvió ${order.folio} a ${tipo === 'sistemas' ? 'Sistemas' : 'Compras'}`,
+        datos: { orderId: order.id, folio: order.folio, tipo, tipoAnterior }
+      }, req.userId);
+
+      if (order.usuarioId !== req.userId) {
+        await ns.notifyUser(order.usuarioId, {
+          tipo: 'SYSTEM',
+          titulo: '📨 Vale reenviado',
+          mensaje: `${order.folio} fue reenviado a ${tipo === 'sistemas' ? 'Sistemas' : 'Compras'}`,
+          datos: { orderId: order.id, folio: order.folio, tipo, tipoAnterior }
+        });
+      }
+    } catch (notifErr) {
+      console.error('[Notification] Error sending transfer notification:', notifErr);
+    }
+
+    const updatedOrder = await Order.findByPk(order.id, {
+      include: [
+        { model: User, attributes: ['id', 'nombre', 'estacion', 'rol'] },
+        { model: WorkReport, as: 'workReport' }
+      ]
+    });
+
+    res.json(updatedOrder);
+  } catch (error: any) {
+    console.error('Error forwarding order:', error);
+    res.status(500).json({ message: 'Error al reenviar el vale' });
   }
 });
 

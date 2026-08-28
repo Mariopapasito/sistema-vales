@@ -24,6 +24,7 @@ import {
   QueueListIcon,
   BellAlertIcon,
   HandThumbUpIcon,
+  PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 import '../styles/Notifications.css';
@@ -81,6 +82,8 @@ export const Dashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const savedDashboardState = readDashboardState();
+  const initialDashboardStateRef = useRef(savedDashboardState);
+  const restoredPositionRef = useRef(false);
   const [selectedTab, setSelectedTab] = useState<'sistemas' | 'compras' | 'todos'>(() => {
     const savedTab = savedDashboardState?.selectedTab;
     return savedTab === 'sistemas' || savedTab === 'compras' ? savedTab : 'todos';
@@ -92,6 +95,7 @@ export const Dashboard: React.FC = () => {
     return savedFilters && typeof savedFilters === 'object' ? { ...emptyFilters, ...savedFilters } : emptyFilters;
   });
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [forwardingOrderId, setForwardingOrderId] = useState<number | null>(null);
 
   // Refs for scrolling to sections
   const sinIniciarRef = useRef<HTMLDivElement>(null);
@@ -114,13 +118,15 @@ export const Dashboard: React.FC = () => {
   const [total, setTotal] = useState(0);
   const LIMIT = 20;
 
-  const persistDashboardState = useCallback(() => {
+  const persistDashboardState = useCallback((selectedOrderId?: number) => {
     if (typeof window === 'undefined') return;
+    const previous = readDashboardState();
     const snapshot = {
       selectedTab,
       currentPage,
       filters,
       scrollY: window.scrollY,
+      selectedOrderId: selectedOrderId ?? previous?.selectedOrderId,
     };
     window.sessionStorage.setItem(DASHBOARD_STATE_KEY, JSON.stringify(snapshot));
   }, [selectedTab, currentPage, filters]);
@@ -141,17 +147,17 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    persistDashboardState();
-  }, [persistDashboardState]);
-
-  useEffect(() => {
     if (typeof window === 'undefined') return;
-    const savedState = readDashboardState();
-    const savedScroll = Number(savedState?.scrollY || 0);
-    if (Number.isFinite(savedScroll)) {
-      window.scrollTo({ top: savedScroll, behavior: 'auto' });
-    }
-  }, []);
+    // Actualiza página/filtros sin borrar la posición que todavía falta restaurar.
+    const previous = readDashboardState();
+    window.sessionStorage.setItem(DASHBOARD_STATE_KEY, JSON.stringify({
+      ...previous,
+      selectedTab,
+      currentPage,
+      filters,
+      scrollY: restoredPositionRef.current ? window.scrollY : (previous?.scrollY || 0),
+    }));
+  }, [selectedTab, currentPage, filters]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -170,13 +176,16 @@ export const Dashboard: React.FC = () => {
       if (debouncedFilters.estacion) params.set('estacion', debouncedFilters.estacion);
       if (debouncedFilters.fechaDesde) params.set('fechaDesde', debouncedFilters.fechaDesde);
       if (debouncedFilters.fechaHasta) params.set('fechaHasta', debouncedFilters.fechaHasta);
+      const roleShowsTabs = user?.rol === 'jefe' || user?.rol === 'sistemas' ||
+        ['estacion', 'almacen', 'constructora', 'marketing'].includes(user?.rol || '');
+      if (roleShowsTabs && selectedTab !== 'todos') params.set('tipo', selectedTab);
       params.set('page', String(currentPage));
       params.set('limit', String(LIMIT));
 
       const qs = params.toString();
       const [ordersRes, statsRes] = await Promise.all([
         api.get(`/orders?${qs}`),
-        api.get('/orders/stats'),
+        api.get(`/orders/stats?${qs}`),
       ]);
       setOrders(ordersRes.data.orders);
       setTotalPages(ordersRes.data.totalPages);
@@ -187,9 +196,38 @@ export const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedFilters, currentPage]);
+  }, [debouncedFilters, currentPage, selectedTab, user?.rol]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  useEffect(() => {
+    if (loading || restoredPositionRef.current || typeof window === 'undefined') return;
+    const savedState = initialDashboardStateRef.current;
+    restoredPositionRef.current = true;
+
+    // Esperar a que React pinte las tarjetas antes de restaurar la posición.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const selectedOrderId = Number(savedState?.selectedOrderId);
+        const selectedCard = Number.isFinite(selectedOrderId)
+          ? document.querySelector<HTMLElement>(`[data-order-id="${selectedOrderId}"]`)
+          : null;
+        const savedScroll = Number(savedState?.scrollY || 0);
+
+        if (Number.isFinite(savedScroll)) window.scrollTo({ top: savedScroll, behavior: 'auto' });
+
+        if (selectedCard) {
+          const cardRect = selectedCard.getBoundingClientRect();
+          if (cardRect.bottom < 0 || cardRect.top > window.innerHeight) {
+            selectedCard.scrollIntoView({ behavior: 'auto', block: 'center' });
+          }
+          selectedCard.classList.add('order-card-restored');
+          window.setTimeout(() => selectedCard.classList.remove('order-card-restored'), 1600);
+          return;
+        }
+      });
+    });
+  }, [loading, orders]);
 
   const updateOrderState = async (orderId: number, newState: string, firma?: string | null) => {
     try {
@@ -205,6 +243,27 @@ export const Dashboard: React.FC = () => {
       setSigPending({ orderId, newState, type: 'sistemas' });
     } else {
       updateOrderState(orderId, newState);
+    }
+  };
+
+  const handleForwardOrder = async (e: React.MouseEvent, order: Order) => {
+    e.stopPropagation();
+    const destination = order.tipo === 'sistemas' ? 'compras' : 'sistemas';
+    const destinationLabel = destination === 'sistemas' ? 'Sistemas' : 'Compras';
+
+    if (!window.confirm(`¿Reenviar el vale ${order.folio} a ${destinationLabel}? Conservará su estado actual.`)) return;
+
+    try {
+      setForwardingOrderId(order.id);
+      await api.patch(`/orders/${order.id}/reenviar`, { tipo: destination });
+      // Retirarlo de inmediato de la bandeja actual y después sincronizar totales/paginación.
+      setOrders(current => current.filter(item => item.id !== order.id));
+      await fetchOrders();
+    } catch (error: any) {
+      console.error('Error forwarding order:', error);
+      alert(error.response?.data?.message || 'No se pudo reenviar el vale');
+    } finally {
+      setForwardingOrderId(null);
     }
   };
 
@@ -269,6 +328,9 @@ export const Dashboard: React.FC = () => {
     (user?.rol === 'compras' && order.tipo === 'compras') ||
     user?.rol === 'jefe';
 
+  const canForward = (order: Order) =>
+    (user?.rol === 'sistemas' || user?.rol === 'compras') && user.rol === order.tipo;
+
   const canConfirm = (order: Order) => {
     if (ESTACION_LIKE.includes(user?.rol || '')) return !order.confirmadoEstacion;
     if (canChangeStatus(order)) return !order.confirmadoProveedor;
@@ -285,9 +347,9 @@ export const Dashboard: React.FC = () => {
     const cardClass = isPorConfirmar ? 'order-card por-confirmar' : `order-card ${colorClass}`;
 
     return (
-      <div key={order.id} className={cardClass} onClick={() => {
-        persistDashboardState();
-        navigate(`/orders/${order.id}`);
+      <div key={order.id} data-order-id={order.id} className={cardClass} onClick={() => {
+        persistDashboardState(order.id);
+        navigate(`/orders/${order.id}`, { state: { fromDashboard: true } });
       }} style={{ cursor: 'pointer' }}>
         <div className="card-header">
           <div>
@@ -321,6 +383,19 @@ export const Dashboard: React.FC = () => {
         {canConfirm(order) && (
           <button className="btn-confirm" onClick={(e) => confirmarOrden(e, order.id)}>
             <HandThumbUpIcon style={{ width: 14, height: 14 }} /> Marcar completado
+          </button>
+        )}
+
+        {canForward(order) && (
+          <button
+            className="btn-forward"
+            onClick={(e) => handleForwardOrder(e, order)}
+            disabled={forwardingOrderId === order.id}
+          >
+            <PaperAirplaneIcon style={{ width: 14, height: 14 }} />
+            {forwardingOrderId === order.id
+              ? 'Reenviando...'
+              : `Reenviar a ${order.tipo === 'sistemas' ? 'Compras' : 'Sistemas'}`}
           </button>
         )}
 
@@ -418,14 +493,14 @@ export const Dashboard: React.FC = () => {
           {/* Tabs para Jefe y Estación */}
           {showTabs && (
             <div className="tabs-container">
-              <button onClick={() => setSelectedTab('todos')} className={`tab ${selectedTab === 'todos' ? 'active' : ''}`}>
-                <QueueListIcon style={{ width: 16, height: 16 }} /> Todas ({orders.length})
+              <button onClick={() => { setSelectedTab('todos'); setCurrentPage(1); }} className={`tab ${selectedTab === 'todos' ? 'active' : ''}`}>
+                <QueueListIcon style={{ width: 16, height: 16 }} /> Todas
               </button>
-              <button onClick={() => setSelectedTab('sistemas')} className={`tab ${selectedTab === 'sistemas' ? 'active' : ''}`}>
-                <Cog6ToothIcon style={{ width: 16, height: 16 }} /> Sistemas ({orders.filter(o => o.tipo === 'sistemas').length})
+              <button onClick={() => { setSelectedTab('sistemas'); setCurrentPage(1); }} className={`tab ${selectedTab === 'sistemas' ? 'active' : ''}`}>
+                <Cog6ToothIcon style={{ width: 16, height: 16 }} /> Sistemas
               </button>
-              <button onClick={() => setSelectedTab('compras')} className={`tab ${selectedTab === 'compras' ? 'active' : ''}`}>
-                <ShoppingCartIcon style={{ width: 16, height: 16 }} /> Compras ({orders.filter(o => o.tipo === 'compras').length})
+              <button onClick={() => { setSelectedTab('compras'); setCurrentPage(1); }} className={`tab ${selectedTab === 'compras' ? 'active' : ''}`}>
+                <ShoppingCartIcon style={{ width: 16, height: 16 }} /> Compras
               </button>
             </div>
           )}

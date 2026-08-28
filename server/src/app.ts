@@ -33,6 +33,8 @@ import activityLogsRoutes from './routes/activityLogs';
 import ActivityLog from './models/ActivityLog';
 import DirectMessage from './models/DirectMessage';
 import messagesRoutes from './routes/messages';
+import bitacoraRoutes from './routes/bitacoras';
+import Bitacora from './models/Bitacora';
 
 import sequelize from './config/database';
 
@@ -83,6 +85,15 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Las respuestas autenticadas cambian por usuario y deben venir siempre del servidor.
+// Evita contadores/listas antiguos y que un caché compartido mezcle bandejas entre roles.
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
+
 app.use(express.static('public', {
   setHeaders: (res, path) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -125,6 +136,10 @@ MaterialUsage.belongsTo(Material, { foreignKey: 'materialId', as: 'material' });
 User.hasMany(ReportPhoto, { foreignKey: 'userId', as: 'reportPhotos' });
 ReportPhoto.belongsTo(User, { foreignKey: 'userId' });
 
+// Bitacora Associations
+User.hasMany(Bitacora, { foreignKey: 'userId', as: 'bitacoras' });
+Bitacora.belongsTo(User, { foreignKey: 'userId' });
+
 // MonthlyOrder Associations
 User.hasMany(MonthlyOrder, { foreignKey: 'createdBy', as: 'monthlyOrders' });
 MonthlyOrder.belongsTo(User, { foreignKey: 'createdBy', as: 'createdByUser' });
@@ -164,6 +179,17 @@ User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
     `);
     await ActivityLog.sync({ force: false });
     await DirectMessage.sync({ force: false });
+    // Migrate bitacoras created by versions that only used browser storage.
+    const bitacoraCols = await sequelize.query('SHOW COLUMNS FROM bitacoras').catch(() => [] as any[]);
+    const hasLegacyId = Array.isArray(bitacoraCols[0]) && bitacoraCols[0].some((col: any) => col.Field === 'legacyId');
+    if (!hasLegacyId) {
+      await sequelize.query('ALTER TABLE bitacoras ADD COLUMN legacyId VARCHAR(191) NULL');
+    }
+    const bitacoraIndexes = await sequelize.query('SHOW INDEX FROM bitacoras').catch(() => [] as any[]);
+    const hasLegacyIndex = Array.isArray(bitacoraIndexes[0]) && bitacoraIndexes[0].some((idx: any) => idx.Key_name === 'bitacoras_user_legacy');
+    if (!hasLegacyIndex) {
+      await sequelize.query('CREATE UNIQUE INDEX bitacoras_user_legacy ON bitacoras (userId, legacyId)');
+    }
     // Ensure users.rol ENUM includes almacen and constructora
     await sequelize.query(`
       ALTER TABLE users MODIFY COLUMN rol ENUM('jefe','sistemas','estacion','compras','almacen','constructora','marketing') NOT NULL DEFAULT 'estacion'
@@ -216,6 +242,7 @@ app.use('/api/orders', orderCommentRoutes);
 app.use('/api/monthly-orders', monthlyOrderCommentRoutes);
 app.use('/api/activity-logs', activityLogsRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/bitacoras', bitacoraRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

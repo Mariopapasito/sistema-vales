@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { ArrowDownTrayIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -40,6 +40,33 @@ type StationFormState = {
   trabajoExtra: string;
   requerimientos: string;
   seguimiento: string;
+  requerimientosUrgentes: string;
+  requerimientosGenerales: string;
+  requerimientosMaterial: string;
+  indicacionesCorporativo: string;
+  coordinacionInterdepartamental: string;
+  enviosPendientes: string;
+  dirigidoA1: string;
+  concepto1: string;
+  dirigidoA2: string;
+  concepto2: string;
+  dirigidoA3: string;
+  concepto3: string;
+  atencionClientes: string;
+  cortesia: string;
+  imagen: string;
+  motivacionVenta: string;
+  instruccionesAtencion: string;
+  instruccionesCortesia: string;
+  instruccionesImagen: string;
+  instruccionesMotivacion: string;
+  laboresMantenimiento: string;
+  realizoVisita: string;
+  recibioVisita: string;
+  senalamientoFachadas: string;
+  senalamientoHorizontal: string;
+  senalamientoVertical: string;
+  guarnicionesBanquetas: string;
 };
 
 type WeeklyFormState = {
@@ -57,29 +84,32 @@ type RegisteredBitacora = {
   fecha: string;
   folio: string;
   payload: Partial<StationFormState> | WeeklyFormState;
+  createdAt?: string;
 };
 
-const stationChecklistKeys = [
-  'isla1',
-  'isla2',
-  'isla3',
-  'isla4',
-  'isla5',
-  'sanitarios',
-  'cuartoMaquinas',
-  'cuartoElectrico',
-  'vestidorPersonal',
-  'almacen',
-  'cuartoSecos',
-  'facturacion',
-  'areasVerdes',
-  'areaTanques',
-  'zonasCarga',
-  'patioAccesos',
-  'oficinas',
-  'senalamiento',
-  'trabajoExtra',
-] as const;
+const stationChecklistRows: Array<{ key: keyof StationFormState; label: string }> = [
+  { key: 'isla1', label: 'ISLA 1' },
+  { key: 'isla2', label: 'ISLA 2' },
+  { key: 'isla3', label: 'ISLA 3' },
+  { key: 'isla4', label: 'ISLA 4' },
+  { key: 'isla5', label: 'ISLA 5' },
+  { key: 'sanitarios', label: 'SANITARIOS' },
+  { key: 'cuartoMaquinas', label: 'CUARTO DE MÁQUINAS' },
+  { key: 'cuartoElectrico', label: 'CUARTO ELÉCTRICO' },
+  { key: 'vestidorPersonal', label: 'VESTIDOR DE PERSONAL' },
+  { key: 'almacen', label: 'ALMACÉN DE ACEITES Y REFACCIONES' },
+  { key: 'cuartoSecos', label: 'CUARTO DE SUCIOS' },
+  { key: 'facturacion', label: 'FACTURACIÓN' },
+  { key: 'areasVerdes', label: 'ÁREAS VERDES' },
+  { key: 'areaTanques', label: 'ÁREA DE TANQUES' },
+  { key: 'zonasCarga', label: 'ZONAS DE CARGA' },
+  { key: 'patioAccesos', label: 'PATIO ACCESOS' },
+  { key: 'oficinas', label: 'OFICINAS, MUROS Y FACHADAS' },
+  { key: 'senalamientoFachadas', label: 'SEÑALAMIENTO Y FACHADAS' },
+  { key: 'senalamientoHorizontal', label: 'SEÑALAMIENTO HORIZONTAL' },
+  { key: 'senalamientoVertical', label: 'SEÑALAMIENTO VERTICAL' },
+  { key: 'guarnicionesBanquetas', label: 'GUARNICIONES Y BANQUETAS' },
+];
 
 const initialStationForm: StationFormState = {
   fecha: '',
@@ -110,6 +140,19 @@ const initialStationForm: StationFormState = {
   trabajoExtra: '',
   requerimientos: '',
   seguimiento: '',
+  requerimientosUrgentes: '',
+  requerimientosGenerales: '',
+  requerimientosMaterial: '',
+  indicacionesCorporativo: '',
+  coordinacionInterdepartamental: '',
+  enviosPendientes: '',
+  dirigidoA1: '', concepto1: '',
+  dirigidoA2: '', concepto2: '',
+  dirigidoA3: '', concepto3: '',
+  atencionClientes: '', cortesia: '', imagen: '', motivacionVenta: '',
+  instruccionesAtencion: '', instruccionesCortesia: '', instruccionesImagen: '', instruccionesMotivacion: '',
+  laboresMantenimiento: '', realizoVisita: '', recibioVisita: '',
+  senalamientoFachadas: '', senalamientoHorizontal: '', senalamientoVertical: '', guarnicionesBanquetas: '',
 };
 
 const initialWeeklyForm: WeeklyFormState = {
@@ -118,6 +161,16 @@ const initialWeeklyForm: WeeklyFormState = {
   observaciones: '',
   checks: {},
 };
+
+const normalizeStationPayload = (payload: Partial<StationFormState>): StationFormState => ({
+  ...initialStationForm,
+  ...payload,
+  senalamientoFachadas: payload.senalamientoFachadas || payload.senalamiento || '',
+  requerimientosGenerales: payload.requerimientosGenerales || payload.requerimientos || '',
+  indicacionesCorporativo: payload.indicacionesCorporativo || payload.seguimiento || '',
+  atencionClientes: payload.atencionClientes || payload.observaciones || '',
+  id: payload.id || createStationReportId(),
+});
 
 const weeklyLeftSections = [
   {
@@ -130,9 +183,9 @@ const weeklyLeftSections = [
       'AGUA EN POZOS DE OBSERVACION Y TANQUES (TIRA VEEDER)',
       'BOTAS, TUBERIAS, GLANDULAS Y SELLOS EN BUEN ESTADO',
       'CODO DE DESCARGA SIN FISURAS Y CON EMPAQUE',
-      'MANGUERA DESCARGA COMPLETA, SIN FISURAS Y CON',
+      'MANGUERA DESCARGA COMPLETA, SIN FISURAS Y CON EMPAQUE',
       'CABLES CONEXIÓN AUTOTANQUE A TIERRA EN BUEN ESTADO',
-      'TAPA DE TUBERIA DESCARGA CON CIERRE HERMETICO Y',
+      'TAPA DE TUBERIA DESCARGA CON CIERRE HERMETICO Y EMPAQUE',
       'TUBERIA TANQUE CON VALVULA DE SOBRELLENADO',
       'SEÑALAMIENTO DE PARO DE EMERGENCIA COMPLETO',
       'BIOMBOS Y SEÑALIZACION EN BUEN ESTADO',
@@ -147,7 +200,7 @@ const weeklyLeftSections = [
     title: 'DISPENSARIOS',
     items: [
       'PROBAR SENSORES CONTENEDOR DISPENSARIO',
-      'MANGUERAS DE DESPACHO SIN CUARTEADURAS Y/O',
+      'MANGUERAS DE DESPACHO SIN CUARTEADURAS Y/O FISURAS',
       'EXISTE FUGA EN NIPLES, BREAK AWAY, DESTORCEDOR, PISTOLA?',
       'HOLOGRAMAS DE CALIBRACION PROFECO/UV INTACTOS?',
       'FUNDA PISTOLA COMPLETOS, SIN FISURAS Y/O GOLPES?',
@@ -188,11 +241,11 @@ const weeklyRightSections = [
       'TAPAS EN SANITARIOS COMPLETAS',
       'DEPOSITOS DE BASURA EN BUEN ESTADO',
       'TUBERIAS EN GENERAL Y HERRAJES',
-      'ALUMBRADO EN BUEN ESTADO Y',
+      'ALUMBRADO EN BUEN ESTADO Y FUNCIONANDO',
       'ESPEJOS EN BUEN ESTADO Y SIN ROTURAS',
       'SANITARIOS LIMPIOS Y EN BUEN ESTADO',
       'SECADOR DE MANOS EN OPERACIÓN',
-      'MAMPARAS ENTRE SANITARIOS EN BUEN',
+      'MAMPARAS ENTRE SANITARIOS EN BUEN ESTADO',
       'LAVAMANOS Y HERRAJES COMPLETOS',
     ],
   },
@@ -218,12 +271,12 @@ const weeklyRightSections = [
     title: 'CUARTO ELECTRICO',
     rows: [
       'SEÑALIZACION DEL CENTRO DE CARGA LEGIBLE',
-      'EQUIPO DE LIMPIEZA ORDENADO, LIMPIO Y',
+      'EQUIPO DE LIMPIEZA ORDENADO, LIMPIO Y COMPLETO',
       'TAPONES Y SELLOS EYS COMPLETOS',
     ],
   },
   {
-    title: 'UNIFORME PERSONAL Y EQUIPO DE',
+    title: 'UNIFORME PERSONAL Y EQUIPO DE PROTECCIÓN',
     rows: [
       'ROPA DE ALGODÓN (CAMISOLA Y PANTALON)',
       'ZAPATO INDUSTRIAL CON CASQUILLO',
@@ -255,6 +308,32 @@ const weeklyRightSections = [
     ],
   },
 ];
+
+const normalizeWeeklyPayload = (payload: WeeklyFormState): WeeklyFormState => {
+  const checks = { ...(payload.checks || {}) };
+
+  weeklyLeftSections.forEach((section) => section.items.forEach((item) => {
+    const newKey = `${section.title}-${item}`;
+    if (!checks[newKey] && checks[item]) checks[newKey] = checks[item];
+  }));
+
+  weeklyRightSections.forEach((section) => section.rows.forEach((item) => {
+    if (section.title === 'BAÑOS PUBLICOS') {
+      (['M', 'H'] as const).forEach((group) => {
+        const newKey = `${section.title}-${item}-${group}`;
+        if (!checks[newKey]) {
+          if (checks[`${item}-${group}-SI`] === 'SI') checks[newKey] = 'SI';
+          else if (checks[`${item}-${group}-NO`] === 'NO') checks[newKey] = 'NO';
+        }
+      });
+    } else {
+      const newKey = `${section.title}-${item}`;
+      if (!checks[newKey] && checks[item]) checks[newKey] = checks[item];
+    }
+  }));
+
+  return { ...initialWeeklyForm, ...payload, checks };
+};
 
 const formatDateForInput = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -307,117 +386,193 @@ const Bitacoras: React.FC = () => {
     const saved = window.localStorage.getItem('bitacora-jefe');
     return saved ? { ...initialWeeklyForm, ...JSON.parse(saved) } : { ...initialWeeklyForm, fecha: formatDateForInput(new Date()) };
   });
-  const [savedStationReports, setSavedStationReports] = useState<StationFormState[]>(() => {
-    const storageKey = isEstacion ? getStationReportStorageKey(stationUserName) : 'bitacora-estacion-list';
-    const saved = window.localStorage.getItem(storageKey);
-    const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed)
-      ? parsed
-          .filter((item: StationFormState) => !isDemoStationReport(item))
-          .map((item: StationFormState, index: number) => ({
-            ...item,
-            estacion: item.estacion || stationUserName || 'Estación',
-            id: item.id || `legacy-${item.estacion || 'estacion'}-${item.fecha || 'sin-fecha'}-${index}`,
-          }))
-      : [];
-  });
-  const [registeredBitacoras, setRegisteredBitacoras] = useState<RegisteredBitacora[]>(() => {
-    const saved = window.localStorage.getItem(registeredArchiveKey);
-    const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) ? parsed.filter((item) => item && item.id) : [];
-  });
-  const [selectedStationReport, setSelectedStationReport] = useState<number>(0);
+  const [registeredBitacoras, setRegisteredBitacoras] = useState<RegisteredBitacora[]>([]);
+  const [archiveLoading, setArchiveLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingBitacoraId, setEditingBitacoraId] = useState<string | null>(null);
+  const [stationFilter, setStationFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [stationOptions, setStationOptions] = useState<string[]>([]);
 
   const [selectedType, setSelectedType] = useState<'station' | 'weekly' | null>(null);
 
-  const notifyJefeBitacora = async (payload: { tipo: 'station' | 'weekly'; nombre: string; estacion: string; fecha: string; folio: string }) => {
+  const loadBitacoras = async () => {
     try {
-      await api.post('/notifications/bitacora', payload);
-    } catch (error) {
-      console.warn('No se pudo enviar la notificación de bitácora al jefe:', error);
+      setArchiveLoading(true);
+      const params = new URLSearchParams();
+      if (isJefe && stationFilter) params.set('estacion', stationFilter);
+      if (isJefe && dateFilter) {
+        params.set('fechaDesde', dateFilter);
+        params.set('fechaHasta', dateFilter);
+      }
+      const response = await api.get(`/bitacoras?${params.toString()}`);
+      const entries: RegisteredBitacora[] = response.data.map((item: any) => ({
+        id: String(item.id),
+        tipo: item.tipo,
+        nombre: item.nombre,
+        estacion: item.estacion,
+        fecha: item.fecha,
+        folio: item.folio,
+        payload: item.payload || {},
+        createdAt: item.createdAt,
+      }));
+      setRegisteredBitacoras(entries);
+      setStationOptions((current) => Array.from(new Set([
+        ...current,
+        ...entries.map((entry) => entry.estacion).filter(Boolean),
+      ])).sort((a, b) => a.localeCompare(b, 'es')));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'No se pudieron cargar las bitácoras');
+    } finally {
+      setArchiveLoading(false);
     }
   };
 
-  const saveStationReport = () => {
-    const allReports = JSON.parse(window.localStorage.getItem('bitacora-estacion-list') || '[]');
-    const currentStationName = isEstacion ? (user?.estacion || stationForm.estacion || 'Estación') : stationForm.estacion;
-    const currentStationReports = allReports.filter((item: StationFormState) => (item.estacion || '').trim().toLowerCase() === (currentStationName || '').trim().toLowerCase());
-    const latestFolio = currentStationReports.reduce((max: number, item: StationFormState) => {
-      const parsed = Number(String(item.folio || '').replace(/\D/g, ''));
-      return Number.isFinite(parsed) ? Math.max(max, parsed) : max;
-    }, 0);
-    const nextFolio = String(latestFolio + 1).padStart(3, '0');
+  const migrateLocalBitacoras = async () => {
+    if (!user?.id) return;
+    const migrationKey = `bitacoras-server-migration-v3-${user.id}`;
+    if (window.localStorage.getItem(migrationKey) === 'done') return;
 
-    const draft = {
+    try {
+      const raw = window.localStorage.getItem(registeredArchiveKey);
+      const parsed: RegisteredBitacora[] = raw ? JSON.parse(raw) : [];
+      const candidates: RegisteredBitacora[] = Array.isArray(parsed) ? [...parsed] : [];
+
+      // Versiones anteriores también escribían copias fuera del archivo registrado.
+      const globalStationRaw = window.localStorage.getItem('bitacora-estacion-list');
+      const globalStationReports = globalStationRaw ? JSON.parse(globalStationRaw) : [];
+      if (Array.isArray(globalStationReports)) {
+        globalStationReports.forEach((payload: StationFormState, index: number) => candidates.push({
+          id: payload.id || `station-global-${payload.estacion}-${payload.fecha}-${payload.folio}-${index}`,
+          tipo: 'station',
+          nombre: 'REPORTE DE VISITA A ESTACIONES',
+          estacion: payload.estacion,
+          fecha: payload.fecha,
+          folio: payload.folio,
+          payload,
+        }));
+      }
+
+      if (isEstacion) {
+        const personalRaw = window.localStorage.getItem(getStationReportStorageKey(stationUserName));
+        const personalParsed = personalRaw ? JSON.parse(personalRaw) : null;
+        const personalReports = Array.isArray(personalParsed) ? personalParsed : personalParsed ? [personalParsed] : [];
+        personalReports.forEach((payload: StationFormState, index: number) => candidates.push({
+          id: payload.id || `station-personal-${stationUserName}-${payload.fecha}-${payload.folio}-${index}`,
+          tipo: 'station',
+          nombre: 'REPORTE DE VISITA A ESTACIONES',
+          estacion: payload.estacion || stationUserName,
+          fecha: payload.fecha,
+          folio: payload.folio,
+          payload,
+        }));
+      }
+
+      if (isJefe) {
+        const weeklyRaw = window.localStorage.getItem('bitacora-jefe');
+        const weeklyPayload: WeeklyFormState | null = weeklyRaw ? JSON.parse(weeklyRaw) : null;
+        if (weeklyPayload?.fecha) candidates.push({
+          id: `weekly-jefe-${weeklyPayload.fecha}`,
+          tipo: 'weekly',
+          nombre: 'LISTA DE VERIFICACIÓN SEMANAL',
+          estacion: weeklyPayload.area || 'La Villita',
+          fecha: weeklyPayload.fecha,
+          folio: '',
+          payload: weeklyPayload,
+        });
+      }
+
+      const uniqueCandidates = Array.from(new Map(candidates.map((entry) => [entry.id, entry])).values());
+      const legacyEntries = uniqueCandidates.filter((entry) => {
+            if (!entry?.id || !['station', 'weekly'].includes(entry.tipo)) return false;
+            if (isEstacion) {
+              return entry.tipo === 'weekly' ||
+                (entry.estacion || '').trim().toLowerCase() === stationUserName.toLowerCase();
+            }
+            return isJefe;
+          });
+
+      for (const entry of legacyEntries) {
+        await api.post('/bitacoras', {
+          tipo: entry.tipo,
+          estacion: entry.estacion,
+          fecha: entry.fecha || formatDateForInput(new Date()),
+          payload: entry.payload,
+          legacyId: entry.id,
+        });
+      }
+      window.localStorage.setItem(migrationKey, 'done');
+    } catch (error) {
+      console.warn('La migración de bitácoras locales se reintentará después:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      void (async () => {
+        await migrateLocalBitacoras();
+        await loadBitacoras();
+      })();
+    }
+  }, [isJefe, stationFilter, dateFilter, user?.id]);
+
+  const saveStationReport = async () => {
+    const currentStationName = isEstacion ? (user?.estacion || stationForm.estacion || 'Estación') : stationForm.estacion;
+    if (!currentStationName.trim()) {
+      toast.error('Selecciona o escribe el nombre de la estación');
+      return;
+    }
+    if (!stationForm.fecha) {
+      toast.error('Selecciona la fecha de la bitácora');
+      return;
+    }
+
+    const draft: StationFormState = {
       ...stationForm,
       estacion: currentStationName,
-      folio: nextFolio,
       id: stationForm.id || createStationReportId(),
     };
 
-    const updatedAllList = [draft, ...allReports.filter((item: StationFormState) => item.id !== draft.id)];
-
-    const personalKey = getStationReportStorageKey(draft.estacion);
-    const personalReports = JSON.parse(window.localStorage.getItem(personalKey) || '[]');
-    const updatedPersonalList = [draft, ...personalReports.filter((item: StationFormState) => item.id !== draft.id)];
-
-    const archiveEntry: RegisteredBitacora = {
-      id: draft.id || createStationReportId(),
-      tipo: 'station',
-      nombre: 'REPORTE DE VISITA A ESTACIONES',
-      estacion: draft.estacion || 'Estación',
-      fecha: draft.fecha || formatDateForInput(new Date()),
-      folio: draft.folio,
-      payload: draft,
-    };
-
-    const existingArchive = JSON.parse(window.localStorage.getItem(registeredArchiveKey) || '[]');
-    const archiveList = [archiveEntry, ...existingArchive.filter((item: RegisteredBitacora) => item.id !== archiveEntry.id)];
-
-    setSavedStationReports(isEstacion ? updatedPersonalList : updatedAllList);
-    setRegisteredBitacoras(archiveList);
-    setSelectedStationReport(0);
-
-    window.localStorage.setItem('bitacora-estacion-list', JSON.stringify(updatedAllList));
-    window.localStorage.setItem(personalKey, JSON.stringify(updatedPersonalList));
-    window.localStorage.setItem(isEstacion ? personalKey : 'bitacora-estacion', JSON.stringify(draft));
-    window.localStorage.setItem(registeredArchiveKey, JSON.stringify(archiveList));
-    toast.success(`Bitácora registrada: ${archiveEntry.estacion} - ${archiveEntry.folio}`);
-    void notifyJefeBitacora({
-      tipo: 'station',
-      nombre: archiveEntry.nombre,
-      estacion: archiveEntry.estacion,
-      fecha: archiveEntry.fecha,
-      folio: archiveEntry.folio,
-    });
+    try {
+      setSaving(true);
+      const data = { tipo: 'station', estacion: currentStationName, fecha: draft.fecha, payload: draft };
+      const response = editingBitacoraId
+        ? await api.patch(`/bitacoras/${editingBitacoraId}`, data)
+        : await api.post('/bitacoras', data);
+      const savedPayload = response.data.payload || draft;
+      setStationForm({ ...normalizeStationPayload(savedPayload), id: String(response.data.id) });
+      setEditingBitacoraId(String(response.data.id));
+      toast.success(`Bitácora guardada: ${response.data.estacion} - ${response.data.folio}`);
+      await loadBitacoras();
+      setSelectedType(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'No se pudo guardar la bitácora');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const saveWeeklyReport = () => {
-    const archive = JSON.parse(window.localStorage.getItem(registeredArchiveKey) || '[]');
-    const nextFolio = String((archive.length || 0) + 1).padStart(3, '0');
-    const serialized = JSON.stringify(weeklyForm);
-    const record: RegisteredBitacora = {
-      id: createStationReportId(),
-      tipo: 'weekly',
-      nombre: 'LISTA DE VERIFICACIÓN SEMANAL',
-      estacion: weeklyForm.area || 'La Villita',
-      fecha: weeklyForm.fecha || formatDateForInput(new Date()),
-      folio: nextFolio,
-      payload: weeklyForm,
-    };
-
-    const nextArchive = [record, ...archive.filter((item: RegisteredBitacora) => item.id !== record.id)];
-    setRegisteredBitacoras(nextArchive);
-    window.localStorage.setItem('bitacora-jefe', serialized);
-    window.localStorage.setItem(registeredArchiveKey, JSON.stringify(nextArchive));
-    toast.success(`Bitácora registrada: ${record.nombre} - ${record.folio}`);
-    void notifyJefeBitacora({
-      tipo: 'weekly',
-      nombre: record.nombre,
-      estacion: record.estacion,
-      fecha: record.fecha,
-      folio: record.folio,
-    });
+  const saveWeeklyReport = async () => {
+    if (!weeklyForm.fecha) {
+      toast.error('Selecciona la fecha de la bitácora');
+      return;
+    }
+    try {
+      setSaving(true);
+      const data = { tipo: 'weekly', estacion: weeklyForm.area || 'La Villita', fecha: weeklyForm.fecha, payload: weeklyForm };
+      const response = editingBitacoraId
+        ? await api.patch(`/bitacoras/${editingBitacoraId}`, data)
+        : await api.post('/bitacoras', data);
+      setWeeklyForm(normalizeWeeklyPayload(response.data.payload || weeklyForm));
+      setEditingBitacoraId(String(response.data.id));
+      toast.success(`Bitácora guardada: ${response.data.nombre} - ${response.data.folio}`);
+      await loadBitacoras();
+      setSelectedType(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'No se pudo guardar la bitácora');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const updateStationField = (field: keyof StationFormState, value: string) => {
@@ -456,46 +611,101 @@ const Bitacoras: React.FC = () => {
     pdf.save(mode === 'station' ? 'bitacora-estacion.pdf' : 'bitacora-jefe.pdf');
   };
 
-  const stationEntries = useMemo(() => savedStationReports, [savedStationReports]);
-  const archiveEntries = useMemo(() => {
-    if (!registeredBitacoras.length) return [];
-    if (isJefe || user?.rol === 'sistemas') return registeredBitacoras;
-    const currentStation = (user?.estacion || '').trim().toLowerCase();
-    return registeredBitacoras.filter((entry) => !currentStation || (entry.estacion || '').trim().toLowerCase() === currentStation);
-  }, [isJefe, registeredBitacoras, user?.estacion, user?.rol]);
-  const canViewWeekly = ['jefe', 'estacion', 'sistemas'].includes(user?.rol || '');
-  const canViewStation = ['jefe', 'estacion', 'sistemas'].includes(user?.rol || '');
+  const archiveEntries = useMemo(() => registeredBitacoras, [registeredBitacoras]);
+  const canViewWeekly = isJefe || isEstacion;
+  const canViewStation = isJefe || isEstacion;
   const availableBitacoras = canViewWeekly ? ['station', 'weekly'] : canViewStation ? ['station'] : [];
-  const residuosPeligrososSection = weeklyRightSections.find((section) => section.title === 'AREA DE RESIDUOS PELIGROSOS');
-  const remainingRightSections = weeklyRightSections.filter((section) => section.title !== 'AREA DE RESIDUOS PELIGROSOS');
+
+  const renderWeeklySection = (section: { title: string; items?: string[]; rows?: string[] }, splitByGender = false, showColumnLabels = false) => {
+    const items = section.items || section.rows || [];
+    return (
+      <table key={section.title} className={`weekly-table weekly-format-table ${splitByGender ? 'weekly-gender-table' : ''}`}>
+        <thead>
+          {showColumnLabels && (
+            <tr className="weekly-column-labels">
+              <th>ÁREA</th>
+              {splitByGender ? <><th colSpan={2}>CUMPLE (M)</th><th colSpan={2}>CUMPLE (H)</th></> : <th colSpan={2}>CUMPLE</th>}
+            </tr>
+          )}
+          <tr className="weekly-yellow-heading">
+            <th>{section.title}</th>
+            {splitByGender ? <><th>SÍ</th><th>NO</th><th>SÍ</th><th>NO</th></> : <><th>SÍ</th><th>NO</th></>}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={`${section.title}-${item}`}>
+              <td className="weekly-item-cell">{item}</td>
+              {splitByGender ? (
+                <>
+                  {(['M', 'H'] as const).flatMap((group) => (['SI', 'NO'] as const).map((value) => {
+                    const key = `${section.title}-${item}-${group}`;
+                    return (
+                      <td key={`${key}-${value}`} className="weekly-check-cell">
+                        <button
+                          type="button"
+                          aria-label={`${item} ${group} ${value}`}
+                          className={`weekly-paper-check ${weeklyForm.checks[key] === value ? 'active' : ''}`}
+                          onClick={() => updateWeeklyToggle(key, weeklyForm.checks[key] === value ? '' : value)}
+                        >
+                          {weeklyForm.checks[key] === value ? 'X' : ''}
+                        </button>
+                      </td>
+                    );
+                  }))}
+                </>
+              ) : (
+                (['SI', 'NO'] as const).map((value) => {
+                  const key = `${section.title}-${item}`;
+                  return (
+                    <td key={`${key}-${value}`} className="weekly-check-cell">
+                      <button
+                        type="button"
+                        aria-label={`${item} ${value}`}
+                        className={`weekly-paper-check ${weeklyForm.checks[key] === value ? 'active' : ''}`}
+                        onClick={() => updateWeeklyToggle(key, weeklyForm.checks[key] === value ? '' : value)}
+                      >
+                        {weeklyForm.checks[key] === value ? 'X' : ''}
+                      </button>
+                    </td>
+                  );
+                })
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
 
   const openRegisteredBitacora = (entry: RegisteredBitacora) => {
+    setEditingBitacoraId(entry.id);
     if (entry.tipo === 'station') {
       const payload = entry.payload as Partial<StationFormState>;
-      setStationForm({ ...initialStationForm, ...payload, id: payload.id || createStationReportId() });
+      setStationForm(normalizeStationPayload(payload));
       setSelectedType('station');
       return;
     }
 
     const payload = entry.payload as WeeklyFormState;
-    setWeeklyForm({ ...initialWeeklyForm, ...payload, checks: payload.checks || {} });
+    setWeeklyForm(normalizeWeeklyPayload(payload));
     setSelectedType('weekly');
   };
 
   const downloadRegisteredBitacora = async (entry: RegisteredBitacora) => {
     if (entry.tipo === 'station') {
       const payload = entry.payload as Partial<StationFormState>;
-      setStationForm({ ...initialStationForm, ...payload, id: payload.id || createStationReportId() });
+      setStationForm(normalizeStationPayload(payload));
       setTimeout(() => exportPdf('station'), 0);
       return;
     }
 
     const payload = entry.payload as WeeklyFormState;
-    setWeeklyForm({ ...initialWeeklyForm, ...payload, checks: payload.checks || {} });
+    setWeeklyForm(normalizeWeeklyPayload(payload));
     setTimeout(() => exportPdf('jefe'), 0);
   };
 
-  if (!isJefe && !isEstacion && user?.rol !== 'sistemas') {
+  if (!isJefe && !isEstacion) {
     return <div className="dashboard-container"><p>No tienes permisos para acceder a las bitácoras.</p></div>;
   }
 
@@ -512,112 +722,93 @@ const Bitacoras: React.FC = () => {
         <div className="bitacora-panel">
           <div className="bitacora-actions">
             <button type="button" className="btn-save-bitacora secondary" onClick={() => setSelectedType(null)}>Regresar</button>
-            <button type="button" className="btn-save-bitacora" onClick={saveStationReport}>Guardar</button>
+            <button type="button" className="btn-save-bitacora" onClick={saveStationReport} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
             <button type="button" className="btn-save-bitacora secondary" onClick={() => exportPdf('station')}>
               <ArrowDownTrayIcon style={{ width: 18, height: 18 }} /> Descargar PDF
             </button>
           </div>
 
           <div ref={stationSheetRef} className="bitacora-sheet bitacora-estacion-sheet">
-            <div className="station-header-row">
-              <div className="station-logo-box">
-                <img src="/logo-sidebar.png" alt="La Villita" className="station-logo-image" />
-              </div>
-              <div className="station-header-text">
-                <div className="bitacora-phone">Tel. 492 950 5776</div>
-                <div className="bitacora-phone">Tel. 492 870 7663</div>
-                <div className="bitacora-phone">Tel. 492 970 6090</div>
-              </div>
-            </div>
-
             <div className="bitacora-title-wrap">
               <h2>MULTISERVICIOS LA VILLITA, S.A. de C.V.</h2>
               <p>GERENCIA DE OPERACION DE ESTACIONES DE SERVICIO</p>
               <p>REPORTE DE VISITA A ESTACIONES</p>
             </div>
 
-            <div className="bitacora-meta-row">
-              <div className="field-inline field-inline-wide">
-                <span>ESTACION</span>
-                <input value={stationForm.estacion} onChange={(e) => updateStationField('estacion', e.target.value)} />
+            <div className="station-form-meta">
+              <div className="station-meta-left">
+                <label className="station-line station-name-line"><span>ESTACIÓN</span><input value={stationForm.estacion} onChange={(e) => updateStationField('estacion', e.target.value)} readOnly={isEstacion} /></label>
+                <label className="station-line"><span>FECHA</span><input type="date" value={stationForm.fecha} onChange={(e) => updateStationField('fecha', e.target.value)} /></label>
+                <label className="station-line"><span>HORA LLEGADA</span><input value={stationForm.horaLlegada} onChange={(e) => updateStationField('horaLlegada', e.target.value)} /></label>
               </div>
-              <div className="field-inline field-inline-folio">
-                <span>FOLIO</span>
-                <input value={stationForm.folio} onChange={(e) => updateStationField('folio', e.target.value)} />
+              <div className="station-meta-logo"><img src="/logo.png" alt="La Villita" /></div>
+              <div className="station-meta-right">
+                <label className="station-folio"><span>FOLIO</span><strong>Nº</strong><input value={stationForm.folio} readOnly /></label>
+                <label className="station-line"><span>HORA SALIDA</span><input value={stationForm.horaSalida} onChange={(e) => updateStationField('horaSalida', e.target.value)} /></label>
               </div>
+              <label className="station-line station-manager-line"><span>ENCARGADO DE ESTACIÓN:</span><input value={stationForm.encargado} onChange={(e) => updateStationField('encargado', e.target.value)} /></label>
             </div>
 
-            <div className="bitacora-meta-row compact">
-              <div className="field-inline">
-                <span>FECHA</span>
-                <input type="date" value={stationForm.fecha} onChange={(e) => updateStationField('fecha', e.target.value)} />
-              </div>
-              <div className="field-inline">
-                <span>HORA LLEGADA</span>
-                <input value={stationForm.horaLlegada} onChange={(e) => updateStationField('horaLlegada', e.target.value)} />
-              </div>
-              <div className="field-inline">
-                <span>HORA SALIDA</span>
-                <input value={stationForm.horaSalida} onChange={(e) => updateStationField('horaSalida', e.target.value)} />
-              </div>
-              <div className="field-inline">
-                <span>ENCARGADO</span>
-                <input value={stationForm.encargado} onChange={(e) => updateStationField('encargado', e.target.value)} />
-              </div>
-            </div>
-
+            <div className="station-section-heading">RECORRIDO DE INSTALACIONES:</div>
             <table className="bitacora-table">
               <thead>
                 <tr>
-                  <th style={{ width: '55%' }}>RECORDIDO DE INSTALACIONES:</th>
+                  <th style={{ width: '37%' }}>ÁREA</th>
                   <th style={{ width: '45%' }}>OBSERVACIONES</th>
                 </tr>
               </thead>
               <tbody>
-                {stationChecklistKeys.map((key) => (
+                {stationChecklistRows.map(({ key, label }) => (
                   <tr key={key}>
-                    <td className="area-name">
-                      {key === 'isla1' && 'ISLA 1'}
-                      {key === 'isla2' && 'ISLA 2'}
-                      {key === 'isla3' && 'ISLA 3'}
-                      {key === 'isla4' && 'ISLA 4'}
-                      {key === 'isla5' && 'ISLA 5'}
-                      {key === 'sanitarios' && 'SANITARIOS'}
-                      {key === 'cuartoMaquinas' && 'CUARTO DE MAQUINAS'}
-                      {key === 'cuartoElectrico' && 'CUARTO ELECTRICO'}
-                      {key === 'vestidorPersonal' && 'VESTIDOR DE PERSONAL'}
-                      {key === 'almacen' && 'ALMACEN DE ASEITES Y REFACCIONES'}
-                      {key === 'cuartoSecos' && 'CUARTO DE SECOS'}
-                      {key === 'facturacion' && 'FACTURACION'}
-                      {key === 'areasVerdes' && 'AREAS VERDES'}
-                      {key === 'areaTanques' && 'AREA DE TANQUES'}
-                      {key === 'zonasCarga' && 'ZONAS DE CARGA'}
-                      {key === 'patioAccesos' && 'PATIO ACCESOS'}
-                      {key === 'oficinas' && 'OFICINAS, MUROS Y PACHADAS'}
-                      {key === 'senalamiento' && 'SEÑALAMIENTO'}
-                      {key === 'trabajoExtra' && 'TRABAJO EXTRA'}
-                    </td>
-                    <td><input value={(stationForm as any)[key]} onChange={(e) => updateStationField(key, e.target.value)} /></td>
+                    <td className="area-name">{label}</td>
+                    <td><input value={String(stationForm[key] || '')} onChange={(e) => updateStationField(key, e.target.value)} /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="bitacora-section-title">REQUERIMIENTOS DEL GERENTE DE ESTACION</div>
-            <div className="bitacora-textarea-wrap">
-              <textarea value={stationForm.requerimientos} onChange={(e) => updateStationField('requerimientos', e.target.value)} />
+            <div className="station-lower-heading">REQUERIMIENTOS DEL GERENTE DE ESTACIÓN</div>
+            <div className="station-requirements-grid">
+              <label><span>URGENTES</span><input value={stationForm.requerimientosUrgentes} onChange={(e) => updateStationField('requerimientosUrgentes', e.target.value)} /></label>
+              <label><span>GENERALES</span><input value={stationForm.requerimientosGenerales} onChange={(e) => updateStationField('requerimientosGenerales', e.target.value)} /></label>
+              <label className="station-material-row"><span>MATERIAL DE ASEO, REFACCIONES, SEÑALAMIENTO, PAPELERÍA, UNIFORMES.</span><input value={stationForm.requerimientosMaterial} onChange={(e) => updateStationField('requerimientosMaterial', e.target.value)} /></label>
             </div>
 
-            <div className="bitacora-section-title">SEGUIMIENTO DE ASUNTOS PENDIENTES DE VISITAS ANTERIORES</div>
-            <div className="bitacora-textarea-wrap big">
-              <textarea value={stationForm.seguimiento} onChange={(e) => updateStationField('seguimiento', e.target.value)} />
+            <div className="station-lower-heading">SEGUIMIENTO DE ASUNTOS PENDIENTES DE VISITAS ANTERIORES</div>
+            <div className="station-follow-grid">
+              <label><span>INDICACIONES DE CORPORATIVO A LA ESTACIÓN</span><input value={stationForm.indicacionesCorporativo} onChange={(e) => updateStationField('indicacionesCorporativo', e.target.value)} /></label>
+              <label><span>COORDINACIÓN INTERDEPARTAMENTAL</span><input value={stationForm.coordinacionInterdepartamental} onChange={(e) => updateStationField('coordinacionInterdepartamental', e.target.value)} /></label>
+              <label className="full"><span>ENVÍOS, MENSAJES, PENDIENTES DE ESTACIÓN A CORPORATIVO</span><input value={stationForm.enviosPendientes} onChange={(e) => updateStationField('enviosPendientes', e.target.value)} /></label>
+              {([1, 2, 3] as const).map((row) => (
+                <React.Fragment key={row}>
+                  <label><span>DIRIGIDO A:</span><input value={stationForm[`dirigidoA${row}`]} onChange={(e) => updateStationField(`dirigidoA${row}`, e.target.value)} /></label>
+                  <label><span>CONCEPTO:</span><input value={stationForm[`concepto${row}`]} onChange={(e) => updateStationField(`concepto${row}`, e.target.value)} /></label>
+                </React.Fragment>
+              ))}
             </div>
 
-            <div className="bitacora-final-row">
-              <div className="field-inline field-inline-large">
-                <span>OBSERVACIONES</span>
-                <textarea value={stationForm.observaciones} onChange={(e) => updateStationField('observaciones', e.target.value)} />
-              </div>
+            <div className="station-lower-heading">OBSERVACIONES E INSTRUCCIONES A GERENCIA DE ESTACIÓN PARA PRÓXIMA VISITA</div>
+            <table className="station-instructions-table">
+              <thead><tr><th></th><th>OBSERVACIONES</th><th>INSTRUCCIONES</th></tr></thead>
+              <tbody>
+                {([
+                  ['ATENCIÓN A CLIENTES EN DISPENSARIOS', 'atencionClientes', 'instruccionesAtencion'],
+                  ['CORTESÍA', 'cortesia', 'instruccionesCortesia'],
+                  ['IMAGEN', 'imagen', 'instruccionesImagen'],
+                  ['MOTIVACIÓN DE VENTA', 'motivacionVenta', 'instruccionesMotivacion'],
+                ] as Array<[string, keyof StationFormState, keyof StationFormState]>).map(([label, observationKey, instructionKey]) => (
+                  <tr key={label}>
+                    <td>{label}</td>
+                    <td><input value={String(stationForm[observationKey] || '')} onChange={(e) => updateStationField(observationKey, e.target.value)} /></td>
+                    <td><input value={String(stationForm[instructionKey] || '')} onChange={(e) => updateStationField(instructionKey, e.target.value)} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <label className="station-maintenance-row"><span>LABORES DE MANTENIMIENTO A REALIZAR</span><input value={stationForm.laboresMantenimiento} onChange={(e) => updateStationField('laboresMantenimiento', e.target.value)} /></label>
+            <div className="station-signatures">
+              <label><input value={stationForm.realizoVisita} onChange={(e) => updateStationField('realizoVisita', e.target.value)} /><span>REALIZÓ VISITA</span></label>
+              <label><input value={stationForm.recibioVisita} onChange={(e) => updateStationField('recibioVisita', e.target.value)} /><span>RECIBIÓ VISITA</span></label>
             </div>
           </div>
         </div>
@@ -638,7 +829,7 @@ const Bitacoras: React.FC = () => {
         <div className="bitacora-panel">
           <div className="bitacora-actions">
             <button type="button" className="btn-save-bitacora secondary" onClick={() => setSelectedType(null)}>Regresar</button>
-            <button type="button" className="btn-save-bitacora" onClick={saveWeeklyReport}>Guardar</button>
+            <button type="button" className="btn-save-bitacora" onClick={saveWeeklyReport} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
             <button type="button" className="btn-save-bitacora secondary" onClick={() => exportPdf('jefe')}>
               <ArrowDownTrayIcon style={{ width: 18, height: 18 }} /> Descargar PDF
             </button>
@@ -658,156 +849,11 @@ const Bitacoras: React.FC = () => {
 
             <div className="weekly-main-grid">
               <div className="weekly-column">
-                {residuosPeligrososSection && (
-                  <div key={residuosPeligrososSection.title} className="weekly-section-wrap residuos-peligrosos-left">
-                    <div className="weekly-section-header">{residuosPeligrososSection.title}</div>
-                    <table className="weekly-table">
-                      <thead>
-                        <tr>
-                          <th className="weekly-item-header">AREA</th>
-                          <th className="weekly-check-header">SI</th>
-                          <th className="weekly-check-header">NO</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {residuosPeligrososSection.rows.map((item) => (
-                          <tr key={`${residuosPeligrososSection.title}-${item}`}>
-                            <td className="weekly-item-cell">{item}</td>
-                            <td className="weekly-check-cell">
-                              <div className="weekly-check-wrap">
-                                <button type="button" className={`weekly-check ${weeklyForm.checks[item] === 'SI' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(item, 'SI')}>
-                                  {weeklyForm.checks[item] === 'SI' ? 'X' : ''}
-                                </button>
-                              </div>
-                            </td>
-                            <td className="weekly-check-cell">
-                              <div className="weekly-check-wrap">
-                                <button type="button" className={`weekly-check no ${weeklyForm.checks[item] === 'NO' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(item, 'NO')}>
-                                  {weeklyForm.checks[item] === 'NO' ? 'X' : ''}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {weeklyLeftSections.map((section) => (
-                  <div key={section.title} className="weekly-section-wrap">
-                    <div className="weekly-section-header">{section.title}</div>
-                    <table className="weekly-table">
-                      <thead>
-                        <tr>
-                          <th className="weekly-item-header">AREA</th>
-                          <th className="weekly-check-header">SI</th>
-                          <th className="weekly-check-header">NO</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {section.items.map((item) => (
-                          <tr key={`${section.title}-${item}`}>
-                            <td className="weekly-item-cell">{item}</td>
-                            <td className="weekly-check-cell">
-                              <div className="weekly-check-wrap">
-                                <button type="button" className={`weekly-check ${weeklyForm.checks[item] === 'SI' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(item, 'SI')}>
-                                  {weeklyForm.checks[item] === 'SI' ? 'X' : ''}
-                                </button>
-                              </div>
-                            </td>
-                            <td className="weekly-check-cell">
-                              <div className="weekly-check-wrap">
-                                <button type="button" className={`weekly-check no ${weeklyForm.checks[item] === 'NO' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(item, 'NO')}>
-                                  {weeklyForm.checks[item] === 'NO' ? 'X' : ''}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))}
+                {weeklyLeftSections.map((section, index) => renderWeeklySection(section, false, index === 0))}
               </div>
 
               <div className="weekly-column">
-                {remainingRightSections.map((section) => (
-                  <div key={section.title} className="weekly-section-wrap">
-                    <div className="weekly-section-header">{section.title}</div>
-                    {section.title === 'BAÑOS PUBLICOS' ? (
-                      <table className="weekly-table">
-                        <thead>
-                          <tr>
-                            <th className="weekly-item-header">AREA</th>
-                            <th className="weekly-check-header">CUMPLE(M)</th>
-                            <th className="weekly-check-header">CUMPLE(H)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {section.rows.map((item) => (
-                            <tr key={`${section.title}-${item}`}>
-                              <td className="weekly-item-cell">{item}</td>
-                              <td className="weekly-check-group">
-                                <div className="weekly-check-pair">
-                                  <button type="button" className={`weekly-check ${weeklyForm.checks[`${item}-M-SI`] === 'SI' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(`${item}-M-SI`, 'SI')}>{weeklyForm.checks[`${item}-M-SI`] === 'SI' ? 'X' : ''}</button>
-                                  <span>SI</span>
-                                </div>
-                                <div className="weekly-check-pair">
-                                  <button type="button" className={`weekly-check no ${weeklyForm.checks[`${item}-M-NO`] === 'NO' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(`${item}-M-NO`, 'NO')}>{weeklyForm.checks[`${item}-M-NO`] === 'NO' ? 'X' : ''}</button>
-                                  <span>NO</span>
-                                </div>
-                              </td>
-                              <td className="weekly-check-group">
-                                <div className="weekly-check-pair">
-                                  <button type="button" className={`weekly-check ${weeklyForm.checks[`${item}-H-SI`] === 'SI' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(`${item}-H-SI`, 'SI')}>{weeklyForm.checks[`${item}-H-SI`] === 'SI' ? 'X' : ''}</button>
-                                  <span>SI</span>
-                                </div>
-                                <div className="weekly-check-pair">
-                                  <button type="button" className={`weekly-check no ${weeklyForm.checks[`${item}-H-NO`] === 'NO' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(`${item}-H-NO`, 'NO')}>{weeklyForm.checks[`${item}-H-NO`] === 'NO' ? 'X' : ''}</button>
-                                  <span>NO</span>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <table className="weekly-table">
-                        <thead>
-                          <tr>
-                            <th className="weekly-item-header">AREA</th>
-                            <th className="weekly-check-header">SI</th>
-                            <th className="weekly-check-header">NO</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {section.rows.map((item) => (
-                            <tr key={`${section.title}-${item}`}>
-                              <td className="weekly-item-cell">{item}</td>
-                              <td className="weekly-check-cell">
-                                <div className="weekly-check-wrap">
-                                  <button type="button" className={`weekly-check ${weeklyForm.checks[item] === 'SI' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(item, 'SI')}>
-                                    {weeklyForm.checks[item] === 'SI' ? 'X' : ''}
-                                  </button>
-                                  <span>SI</span>
-                                </div>
-                              </td>
-                              <td className="weekly-check-cell">
-                                <div className="weekly-check-wrap">
-                                  <button type="button" className={`weekly-check no ${weeklyForm.checks[item] === 'NO' ? 'active' : ''}`} onClick={() => updateWeeklyToggle(item, 'NO')}>
-                                    {weeklyForm.checks[item] === 'NO' ? 'X' : ''}
-                                  </button>
-                                  <span>NO</span>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                ))}
+                {weeklyRightSections.map((section, index) => renderWeeklySection(section, section.title === 'BAÑOS PUBLICOS', index === 0))}
               </div>
             </div>
 
@@ -834,7 +880,11 @@ const Bitacoras: React.FC = () => {
 
       <div className="bitacora-card-grid">
         {availableBitacoras.includes('station') && (
-          <button type="button" className="bitacora-card" onClick={() => setSelectedType('station')}>
+          <button type="button" className="bitacora-card" onClick={() => {
+            setEditingBitacoraId(null);
+            setStationForm({ ...initialStationForm, estacion: isEstacion ? stationUserName : '', fecha: formatDateForInput(new Date()), id: createStationReportId() });
+            setSelectedType('station');
+          }}>
             <span className="bitacora-card-badge">bitácora 01</span>
             <h3>REPORTE DE VISITA A ESTACIONES</h3>
             <p>Formato completo para registrar inspección, requerimientos y observaciones de la estación.</p>
@@ -842,7 +892,11 @@ const Bitacoras: React.FC = () => {
         )}
 
         {availableBitacoras.includes('weekly') && (
-          <button type="button" className="bitacora-card" onClick={() => setSelectedType('weekly')}>
+          <button type="button" className="bitacora-card" onClick={() => {
+            setEditingBitacoraId(null);
+            setWeeklyForm({ ...initialWeeklyForm, fecha: formatDateForInput(new Date()) });
+            setSelectedType('weekly');
+          }}>
             <span className="bitacora-card-badge">bitácora 02</span>
             <h3>LISTA DE VERIFICACIÓN SEMANAL</h3>
             <p>Control semanal por áreas con revisión rápida de cumplimiento y observaciones.</p>
@@ -852,13 +906,34 @@ const Bitacoras: React.FC = () => {
 
       <div className="bitacora-registered-section">
         <h3>Bitácoras registradas</h3>
-        {archiveEntries.length > 0 ? (
+        {isJefe && (
+          <div className="bitacora-filters">
+            <label>
+              Estación
+              <select value={stationFilter} onChange={(event) => setStationFilter(event.target.value)}>
+                <option value="">Todas las estaciones</option>
+                {stationOptions.map((station) => <option key={station} value={station}>{station}</option>)}
+              </select>
+            </label>
+            <label>
+              Fecha de creación
+              <input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+            </label>
+            {(stationFilter || dateFilter) && (
+              <button type="button" onClick={() => { setStationFilter(''); setDateFilter(''); }}>Limpiar filtros</button>
+            )}
+          </div>
+        )}
+        {archiveLoading ? (
+          <p className="bitacora-registered-empty">Cargando bitácoras...</p>
+        ) : archiveEntries.length > 0 ? (
           <div className="bitacora-registered-grid">
             {archiveEntries.map((entry) => (
               <div key={entry.id} className="bitacora-registered-card">
                 <div className="bitacora-registered-name">{entry.nombre}</div>
                 <div className="bitacora-registered-meta"><strong>Estación:</strong> {entry.estacion || 'N/A'}</div>
                 <div className="bitacora-registered-meta"><strong>Fecha:</strong> {entry.fecha || 'Sin fecha'}</div>
+                <div className="bitacora-registered-meta"><strong>Creada:</strong> {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString('es-MX') : 'Sin fecha'}</div>
                 <div className="bitacora-registered-meta"><strong>Folio:</strong> {entry.folio || 'Sin folio'}</div>
                 <div className="bitacora-registered-actions">
                   <button type="button" className="bitacora-registered-action" onClick={() => openRegisteredBitacora(entry)}>

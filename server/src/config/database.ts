@@ -31,7 +31,6 @@ const sequelize = dbUrl
 export const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: false, force: false });
   } catch (error) {
     console.error('[DB] Connection failed:', error);
     throw error;

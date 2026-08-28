@@ -3,7 +3,10 @@ const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BGI03HeR6D59Q
 export const registerServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return;
   try {
-    return await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+    // En producción se reutiliza el worker PWA (incluye push y control de caché).
+    // Mantener dos workers para el mismo scope hacía que uno reemplazara al otro.
+    const workerUrl = import.meta.env.PROD ? '/sw.js' : '/service-worker.js';
+    return await navigator.serviceWorker.register(workerUrl, { scope: '/' });
   } catch (error) {
     console.error('Error registrando Service Worker:', error);
   }
