@@ -42,11 +42,9 @@ export const subscribeToPushNotifications = async () => {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
 
-    await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(subscriptionToSave)
-    });
+    // Usar la misma URL configurada que el resto de la API. En desarrollo, un
+    // fetch relativo apuntaba a Vite y dejaba el navegador ligado al usuario anterior.
+    await api.post('/push/subscribe', subscriptionToSave.toJSON());
 
     return subscriptionToSave;
   } catch (error) {
@@ -60,13 +58,13 @@ export const unsubscribeFromPushNotifications = async () => {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     if (subscription) {
-      const token = localStorage.getItem('accessToken');
-      await fetch('/api/push/unsubscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(subscription)
-      });
-      await subscription.unsubscribe();
+      try {
+        await api.post('/push/unsubscribe', { endpoint: subscription.endpoint });
+      } finally {
+        // Aunque la red falle, el navegador no debe seguir recibiendo avisos
+        // después de cerrar la sesión en un equipo compartido.
+        await subscription.unsubscribe();
+      }
     }
   } catch (error) {
     console.error('Error desuscribiendo:', error);
@@ -75,7 +73,7 @@ export const unsubscribeFromPushNotifications = async () => {
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) {
@@ -83,3 +81,4 @@ function urlBase64ToUint8Array(base64String: string) {
   }
   return outputArray;
 }
+import api from './api';

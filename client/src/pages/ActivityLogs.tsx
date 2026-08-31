@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from '../components/BrandLoader';
 import {
   ClipboardDocumentListIcon,
   FunnelIcon,
@@ -167,7 +168,7 @@ export default function ActivityLogs() {
           {/* Table */}
           <div className="logs-card">
             {loading ? (
-              <div className="logs-loading">Cargando logs...</div>
+              <BrandLoader variant="section" label="Cargando logs..." />
             ) : logs.length === 0 ? (
               <div className="logs-empty">No hay registros de actividad.</div>
             ) : (

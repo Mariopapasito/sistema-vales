@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from './BrandLoader';
 import {
   ChatBubbleLeftIcon,
   PaperAirplaneIcon,
@@ -236,7 +237,7 @@ const OrderComments: React.FC<OrderCommentsProps> = ({ orderId, basePath = 'orde
 
       <div className="comments-list" ref={listRef} onScroll={handleScroll}>
         {loading ? (
-          <div className="comments-loading">Cargando comentarios...</div>
+          <BrandLoader variant="inline" label="Cargando comentarios..." />
         ) : comments.length === 0 ? (
           <div className="comments-empty">
             <ChatBubbleLeftIcon style={{ width: 32, height: 32, color: '#cbd5e1' }} />
@@ -319,7 +320,7 @@ const OrderComments: React.FC<OrderCommentsProps> = ({ orderId, basePath = 'orde
               disabled={!text.trim() || sending}
             >
               <PaperAirplaneIcon style={{ width: 16, height: 16 }} />
-              {sending ? 'Enviando...' : 'Enviar'}
+              {sending ? <BrandLoader variant="button" label="Enviando..." /> : 'Enviar'}
             </button>
           </div>
         </form>
@@ -333,4 +334,3 @@ const OrderComments: React.FC<OrderCommentsProps> = ({ orderId, basePath = 'orde
 };
 
 export default OrderComments;
-

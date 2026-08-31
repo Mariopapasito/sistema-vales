@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from '../components/BrandLoader';
+import { useConfirm } from '../components/ConfirmDialog';
+import toast from 'react-hot-toast';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/Calendar.css';
@@ -64,6 +67,7 @@ function toDateStr(date: Date): string {
 }
 
 export const Calendar: React.FC = () => {
+  const confirm = useConfirm();
   const user = useSelector((state: RootState) => state.auth.user);
   const canEdit = user?.rol === 'jefe' || user?.rol === 'sistemas';
 
@@ -152,7 +156,8 @@ export const Calendar: React.FC = () => {
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canEdit) return;
-    if (!window.confirm('Eliminar esta tarea?')) return;
+    const accepted = await confirm({ title: 'Eliminar tarea', message: '¿Seguro que quieres eliminar esta tarea?', confirmLabel: 'Eliminar', tone: 'danger' });
+    if (!accepted) return;
     try {
       await api.delete(`/calendar/${id}`);
       setEvents(ev => ev.filter(e => e.id !== id));
@@ -164,7 +169,8 @@ export const Calendar: React.FC = () => {
   const handleDeleteVale = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canEdit) return;
-    if (!window.confirm('Eliminar esta orden?')) return;
+    const accepted = await confirm({ title: 'Eliminar vale', message: '¿Seguro que quieres eliminar este vale?', confirmLabel: 'Eliminar', tone: 'danger' });
+    if (!accepted) return;
     try {
       await api.delete(`/orders/${id}`);
       setVales(v => v.filter(vale => vale.id !== id));
@@ -244,7 +250,7 @@ export const Calendar: React.FC = () => {
     const event = events.find(ev => ev.id === calEventId);
     if (!event || event.fechaInicio.slice(0, 10) === targetStr) return;
     if (getTotalForDay(targetDate) >= MAX_PER_DAY) {
-      alert(`Máximo ${MAX_PER_DAY} actividades por día`);
+      toast.error(`Máximo ${MAX_PER_DAY} actividades por día`);
       return;
     }
     setEvents(evs => evs.map(ev => ev.id === calEventId ? { ...ev, fechaInicio: targetStr } : ev));
@@ -463,7 +469,7 @@ export const Calendar: React.FC = () => {
             <div className="cal-modal-footer">
               <button className="cal-btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
               <button className="cal-btn-save" onClick={handleSave} disabled={loading || !form.titulo.trim()}>
-                {loading ? 'Guardando...' : editEvent ? 'Actualizar' : 'Guardar'}
+                {loading ? <BrandLoader variant="button" label="Guardando..." /> : editEvent ? 'Actualizar' : 'Guardar'}
               </button>
             </div>
           </div>

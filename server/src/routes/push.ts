@@ -21,16 +21,10 @@ router.post('/subscribe', protect, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Invalid subscription' });
     }
 
-    // Remove this endpoint from any OTHER user first — one endpoint can only belong to one user
-    await sequelize.query(
-      `DELETE FROM push_subscriptions WHERE endpoint = :endpoint AND user_id != :userId`,
-      { replacements: { endpoint, userId }, type: QueryTypes.DELETE }
-    );
-
     await sequelize.query(
       `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
        VALUES (:userId, :endpoint, :p256dh, :auth)
-       ON DUPLICATE KEY UPDATE p256dh = :p256dh, auth = :auth`,
+       ON DUPLICATE KEY UPDATE user_id = :userId, p256dh = :p256dh, auth = :auth`,
       { replacements: { userId, endpoint, p256dh: keys.p256dh, auth: keys.auth }, type: QueryTypes.INSERT }
     );
 
@@ -71,14 +65,7 @@ export const sendPushToUser = async (userId: number, payload: object) => {
 
     const payloadStr = JSON.stringify(payload);
 
-    await Promise.allSettled(
-      subs.map((sub) =>
-        webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payloadStr
-        )
-      )
-    );
+    await sendToSubscriptions(subs, payloadStr);
   } catch (error: any) {
     console.error('Push send error (user):', error.message);
   }
@@ -101,17 +88,36 @@ export const sendPushToRole = async (
 
     const payloadStr = JSON.stringify(payload);
 
-    await Promise.allSettled(
-      subs.map((sub) =>
-        webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payloadStr
-        )
-      )
-    );
+    await sendToSubscriptions(subs, payloadStr);
   } catch (error: any) {
     console.error('Push send error:', error.message);
   }
+};
+
+interface StoredPushSubscription {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
+const sendToSubscriptions = async (subs: StoredPushSubscription[], payload: string) => {
+  await Promise.allSettled(subs.map(async (sub) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload
+      );
+    } catch (error: any) {
+      if (error?.statusCode === 404 || error?.statusCode === 410) {
+        await sequelize.query(
+          'DELETE FROM push_subscriptions WHERE endpoint = :endpoint',
+          { replacements: { endpoint: sub.endpoint }, type: QueryTypes.DELETE }
+        );
+        return;
+      }
+      throw error;
+    }
+  }));
 };
 
 export { router as pushRoutes };

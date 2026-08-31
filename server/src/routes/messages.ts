@@ -120,6 +120,7 @@ router.post('/:userId', protect, async (req: AuthRequest, res: Response) => {
     const { texto } = req.body;
 
     if (!texto?.trim()) return res.status(400).json({ message: 'Mensaje vacío' });
+    if (toId === myId) return res.status(400).json({ message: 'No puedes enviarte mensajes a ti mismo' });
 
     const target = await User.findByPk(toId, { attributes: ['id', 'nombre', 'activo'] });
     if (!target || !(target as any).activo) return res.status(404).json({ message: 'Usuario no encontrado' });

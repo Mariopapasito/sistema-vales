@@ -3,7 +3,7 @@ import api from '../services/api';
 
 export interface INotification {
   id: number;
-  tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'MENTION';
+  tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'MENTION' | 'COMMENT';
   titulo: string;
   mensaje: string;
   datos?: any;
@@ -33,7 +33,7 @@ export const useNotifications = () => {
   const fetchUnreadCount = async () => {
     try {
       const res = await api.get('/notifications/count/unread');
-      setUnreadCount(res.data.unreadCount);
+      setUnreadCount(res.data.count ?? 0);
     } catch (error) {
       console.error('Error fetching unread count:', error);
     }
@@ -43,7 +43,7 @@ export const useNotifications = () => {
   const markAsRead = async (id: number) => {
     try {
       await api.put(`/notifications/${id}/read`);
-      setNotifications(notifications.map(n => 
+      setNotifications(current => current.map(n =>
         n.id === id ? { ...n, leida: true } : n
       ));
       await fetchUnreadCount();
@@ -56,7 +56,7 @@ export const useNotifications = () => {
   const markAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all');
-      setNotifications(notifications.map(n => ({ ...n, leida: true })));
+      setNotifications(current => current.map(n => ({ ...n, leida: true })));
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -67,7 +67,7 @@ export const useNotifications = () => {
   const deleteNotification = async (id: number) => {
     try {
       await api.delete(`/notifications/${id}`);
-      setNotifications(notifications.filter(n => n.id !== id));
+      setNotifications(current => current.filter(n => n.id !== id));
       await fetchUnreadCount();
     } catch (error) {
       console.error('Error deleting notification:', error);

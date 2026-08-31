@@ -3,8 +3,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
 import { updateUser } from '../store/slices/authSlice';
+import BrandLoader from '../components/BrandLoader';
+import toast from 'react-hot-toast';
 import {
-  UserCircleIcon, CameraIcon, ArrowPathIcon, CheckIcon, CheckCircleIcon,
+  UserCircleIcon, CameraIcon, CheckIcon, CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/Profile.css';
 
@@ -26,7 +28,7 @@ export default function Profile() {
     if (file) {
       // Limit file size to 2MB
       if (file.size > 2 * 1024 * 1024) {
-        alert('Foto muy grande. Máximo 2MB.');
+        toast.error('Foto muy grande. Máximo 2 MB.');
         return;
       }
 
@@ -86,7 +88,7 @@ export default function Profile() {
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: any) {
       console.error('Error:', error);
-      alert('❌ Error al actualizar: ' + (error.response?.data?.message || error.message));
+      toast.error('Error al actualizar: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -165,7 +167,7 @@ export default function Profile() {
             </div>
 
             <button type="submit" disabled={loading} className="btn-save">
-              {loading ? <><ArrowPathIcon style={{ width: 16, height: 16 }} /> Guardando...</> : <><CheckIcon style={{ width: 16, height: 16 }} /> Guardar Cambios</>}
+              {loading ? <BrandLoader variant="button" label="Guardando..." /> : <><CheckIcon style={{ width: 16, height: 16 }} /> Guardar Cambios</>}
             </button>
           </form>
         </div>

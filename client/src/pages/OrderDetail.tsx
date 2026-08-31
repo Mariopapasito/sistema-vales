@@ -6,6 +6,9 @@ import { RootState } from '../store';
 import api from '../services/api';
 import ReportTemplate from '../components/ReportTemplate';
 import OrderComments from '../components/OrderComments';
+import BrandLoader from '../components/BrandLoader';
+import { useConfirm } from '../components/ConfirmDialog';
+import toast from 'react-hot-toast';
 import { logout } from '../store/slices/authSlice';
 import html2pdf from 'html2pdf.js';
 import jsPDF from 'jspdf';
@@ -64,6 +67,7 @@ interface Order {
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -111,13 +115,19 @@ export const OrderDetail: React.FC = () => {
 
   const handleDelete = async () => {
     if (!order) return;
-    if (!window.confirm(`¿Seguro que quieres eliminar el vale ${order.folio}? Esta acción no se puede deshacer.`)) return;
+    const accepted = await confirm({
+      title: 'Eliminar vale',
+      message: `¿Seguro que quieres eliminar el vale ${order.folio}? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      tone: 'danger',
+    });
+    if (!accepted) return;
     try {
       setDeleting(true);
       await api.delete(`/orders/${id}`);
       navigate('/dashboard');
     } catch (err: any) {
-      alert('Error al eliminar: ' + (err.response?.data?.error || err.message));
+      toast.error('Error al eliminar: ' + (err.response?.data?.error || err.message));
     } finally {
       setDeleting(false);
     }
@@ -248,10 +258,10 @@ export const OrderDetail: React.FC = () => {
       setOrder(response.data);
       setIsEditingVale(false);
       setEditedOrder(null);
-      alert('Vale actualizado exitosamente');
+      toast.success('Vale actualizado exitosamente');
     } catch (err) {
       console.error('Error updating order:', err);
-      alert('Error al actualizar el vale');
+      toast.error('Error al actualizar el vale');
     }
   };
 
@@ -264,12 +274,7 @@ export const OrderDetail: React.FC = () => {
   if (loading) {
     return (
       <main style={{ flex: 1, padding: '2rem', color: '#64748b' }}>
-        <div className="brand-loading-wrapper">
-          <div className="brand-loading-shell">
-            <div className="brand-loading-ring" />
-            <img src="/logo.png" alt="La Villita" className="brand-loading-logo" />
-          </div>
-        </div>
+        <BrandLoader variant="page" label="Cargando vale..." />
       </main>
     );
   }
@@ -443,7 +448,7 @@ export const OrderDetail: React.FC = () => {
                   opacity: deleting ? 0.6 : 1,
                 }}
               >
-                🗑 {deleting ? 'Eliminando...' : 'Eliminar vale'}
+                {deleting ? <BrandLoader variant="button" label="Eliminando..." /> : <>🗑 Eliminar vale</>}
               </button>
             )}
           </div>

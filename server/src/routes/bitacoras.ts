@@ -4,17 +4,16 @@ import Bitacora from '../models/Bitacora';
 import User from '../models/User';
 import { protect, AuthRequest } from '../middleware/auth';
 import NotificationService from '../services/notificationService';
+import { canEditBitacora, canUseBitacoras } from '../domain/permissions';
 
 const router = Router();
 const validTipos = ['station', 'weekly'];
 
 router.use(protect);
 
-const canUseBitacoras = (req: AuthRequest) => ['jefe', 'estacion'].includes(req.user?.rol || '');
-
 router.get('/', async (req: AuthRequest, res) => {
   try {
-    if (!canUseBitacoras(req)) {
+    if (!canUseBitacoras(req.user?.rol)) {
       return res.status(403).json({ message: 'No tienes permisos para ver bitácoras' });
     }
 
@@ -55,7 +54,7 @@ router.get('/', async (req: AuthRequest, res) => {
 
 router.post('/', async (req: AuthRequest, res) => {
   try {
-    if (!canUseBitacoras(req)) {
+    if (!canUseBitacoras(req.user?.rol)) {
       return res.status(403).json({ message: 'No tienes permisos para guardar bitácoras' });
     }
 
@@ -129,13 +128,13 @@ router.post('/', async (req: AuthRequest, res) => {
 
 router.patch('/:id', async (req: AuthRequest, res) => {
   try {
-    if (!canUseBitacoras(req)) {
+    if (!canUseBitacoras(req.user?.rol)) {
       return res.status(403).json({ message: 'No tienes permisos para editar bitácoras' });
     }
 
     const bitacora = await Bitacora.findByPk(req.params.id);
     if (!bitacora) return res.status(404).json({ message: 'Bitácora no encontrada' });
-    if (req.user?.rol === 'estacion' && bitacora.userId !== req.user.id) {
+    if (!canEditBitacora(req.user?.rol, req.user?.id, bitacora.userId)) {
       return res.status(403).json({ message: 'Solo puedes editar tus propias bitácoras' });
     }
 

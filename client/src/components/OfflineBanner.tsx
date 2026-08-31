@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { WifiIcon, SignalSlashIcon, ArrowPathIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import api from '../services/api';
+import BrandLoader from './BrandLoader';
 import './OfflineBanner.css';
 
 export default function OfflineBanner() {
@@ -49,8 +50,7 @@ export default function OfflineBanner() {
         <WifiIcon className="offline-icon" />
         <span>Conexión restaurada — {pendingCount} orden{pendingCount !== 1 ? 'es' : ''} sin sincronizar</span>
         <button className="offline-sync-btn" onClick={handleSync} disabled={syncing}>
-          <ArrowPathIcon className={`offline-icon-sm ${syncing ? 'spinning' : ''}`} />
-          {syncing ? 'Sincronizando...' : 'Sincronizar ahora'}
+          {syncing ? <BrandLoader variant="button" label="Sincronizando..." /> : <><ArrowPathIcon className="offline-icon-sm" /> Sincronizar ahora</>}
         </button>
       </div>
     );

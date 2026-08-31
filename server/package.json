@@ -8,7 +8,10 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "lint": "eslint src/**/*.ts",
-    "test": "jest"
+    "test": "npm run build && node --test dist/tests/*.test.js",
+    "backup": "npm run build && node dist/scripts/databaseBackup.js create",
+    "backup:verify": "npm run build && node dist/scripts/databaseBackup.js verify",
+    "backup:restore": "npm run build && node dist/scripts/databaseBackup.js restore"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

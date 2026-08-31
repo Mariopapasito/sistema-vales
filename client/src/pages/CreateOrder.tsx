@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from '../components/BrandLoader';
+import DraftStatus from '../components/DraftStatus';
+import { useAutosavedDraft } from '../hooks/useAutosavedDraft';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 
@@ -26,6 +29,11 @@ export const CreateOrder: React.FC = () => {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const { savedAt, clearDraft } = useAutosavedDraft({
+    storageKey: user?.id ? `draft:create-order:${user.id}` : null,
+    value: formData,
+    onRestore: (draft) => setFormData((current) => ({ ...current, ...draft, localizacion: user?.estacion || draft.localizacion })),
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -67,6 +75,7 @@ export const CreateOrder: React.FC = () => {
     try {
       setLoading(true);
       await api.post('/orders', { ...formData, imagenes });
+      clearDraft();
       setError('');
       navigate('/dashboard');
     } catch (err: any) {
@@ -79,7 +88,10 @@ export const CreateOrder: React.FC = () => {
   return (
 <div className="dashboard-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '2rem' }}>
           <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Nueva Orden de Trabajo</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <h1 className="text-3xl font-bold text-gray-800" style={{ margin: 0 }}>Nueva Orden de Trabajo</h1>
+          <DraftStatus savedAt={savedAt} />
+        </div>
         
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
 
@@ -242,7 +254,7 @@ export const CreateOrder: React.FC = () => {
               disabled={loading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded disabled:bg-gray-400"
             >
-              {loading ? 'Creando...' : 'Crear Orden'}
+              {loading ? <BrandLoader variant="button" label="Creando..." /> : 'Crear Orden'}
             </button>
             <button
               type="button"

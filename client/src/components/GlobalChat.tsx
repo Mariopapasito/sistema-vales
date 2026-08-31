@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from './BrandLoader';
 import './GlobalChat.css';
 
 interface UserOption {
@@ -189,7 +190,7 @@ const GlobalChat: React.FC = () => {
 
               <div className="gc-messages-body">
                 {loadingMsgs && messages.length === 0 ? (
-                  <div className="global-chat-loading"><div className="global-chat-spinner" /></div>
+                  <BrandLoader variant="inline" label="Cargando mensajes..." />
                 ) : messages.length === 0 ? (
                   <div className="gc-messages-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -227,11 +228,13 @@ const GlobalChat: React.FC = () => {
                   onKeyDown={handleKey}
                   rows={1}
                 />
-                <button className="gc-send-btn" onClick={sendMessage} disabled={!text.trim() || sending}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M22 2L11 13" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M22 2L15 22 11 13 2 9l20-7z" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                <button className="gc-send-btn" onClick={sendMessage} disabled={!text.trim() || sending} aria-label={sending ? 'Enviando...' : 'Enviar'}>
+                  {sending ? <BrandLoader variant="button" label="" /> : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M22 2L11 13" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M22 2L15 22 11 13 2 9l20-7z" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
@@ -265,7 +268,7 @@ const GlobalChat: React.FC = () => {
               </div>
               <div className="global-chat-list">
                 {loadingUsers ? (
-                  <div className="global-chat-loading"><div className="global-chat-spinner" /></div>
+                  <BrandLoader variant="inline" label="Cargando usuarios..." />
                 ) : filteredUsers.length === 0 ? (
                   <div className="global-chat-empty">No se encontraron usuarios</div>
                 ) : filteredUsers.map(u => (
@@ -305,7 +308,7 @@ const GlobalChat: React.FC = () => {
               </div>
               <div className="global-chat-list">
                 {loadingConvs ? (
-                  <div className="global-chat-loading"><div className="global-chat-spinner" /></div>
+                  <BrandLoader variant="inline" label="Cargando conversaciones..." />
                 ) : conversations.length === 0 ? (
                   <div className="global-chat-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

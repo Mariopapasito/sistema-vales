@@ -6,6 +6,9 @@ import NotificationCenter from '../components/NotificationCenter';
 import SearchFilters, { FilterValues } from '../components/SearchFilters';
 import { exportToExcel, exportToPDF } from '../utils/exportOrders';
 import SignatureModal from '../components/SignatureModal';
+import BrandLoader from '../components/BrandLoader';
+import { useConfirm } from '../components/ConfirmDialog';
+import toast from 'react-hot-toast';
 
 import api from '../services/api';
 import { OrderHistory } from '../components/OrderHistory';
@@ -77,6 +80,7 @@ function getDisplayState(order: Order) {
 }
 
 export const Dashboard: React.FC = () => {
+  const confirm = useConfirm();
   const user = useSelector((state: RootState) => state.auth.user);
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -251,7 +255,13 @@ export const Dashboard: React.FC = () => {
     const destination = order.tipo === 'sistemas' ? 'compras' : 'sistemas';
     const destinationLabel = destination === 'sistemas' ? 'Sistemas' : 'Compras';
 
-    if (!window.confirm(`¿Reenviar el vale ${order.folio} a ${destinationLabel}? Conservará su estado actual.`)) return;
+    const accepted = await confirm({
+      title: 'Reenviar vale',
+      message: `¿Reenviar el vale ${order.folio} a ${destinationLabel}? Conservará su estado actual.`,
+      confirmLabel: 'Reenviar',
+      tone: 'primary',
+    });
+    if (!accepted) return;
 
     try {
       setForwardingOrderId(order.id);
@@ -261,7 +271,7 @@ export const Dashboard: React.FC = () => {
       await fetchOrders();
     } catch (error: any) {
       console.error('Error forwarding order:', error);
-      alert(error.response?.data?.message || 'No se pudo reenviar el vale');
+      toast.error(error.response?.data?.message || 'No se pudo reenviar el vale');
     } finally {
       setForwardingOrderId(null);
     }
@@ -392,10 +402,9 @@ export const Dashboard: React.FC = () => {
             onClick={(e) => handleForwardOrder(e, order)}
             disabled={forwardingOrderId === order.id}
           >
-            <PaperAirplaneIcon style={{ width: 14, height: 14 }} />
             {forwardingOrderId === order.id
-              ? 'Reenviando...'
-              : `Reenviar a ${order.tipo === 'sistemas' ? 'Compras' : 'Sistemas'}`}
+              ? <BrandLoader variant="button" label="Reenviando..." />
+              : <><PaperAirplaneIcon style={{ width: 14, height: 14 }} /> Reenviar a {order.tipo === 'sistemas' ? 'Compras' : 'Sistemas'}</>}
           </button>
         )}
 
@@ -417,12 +426,7 @@ export const Dashboard: React.FC = () => {
 
   if (loading) return (
     <main className="dashboard-main">
-      <div className="brand-loading-wrapper">
-        <div className="brand-loading-shell">
-          <div className="brand-loading-ring" />
-          <img src="/logo.png" alt="La Villita" className="brand-loading-logo" />
-        </div>
-      </div>
+      <BrandLoader variant="page" label="Cargando órdenes..." />
     </main>
   );
 

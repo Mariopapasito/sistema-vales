@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import React, { useState, useEffect, useRef } from 'react';
 import { logout } from '../store/slices/authSlice';
+import { unsubscribeFromPushNotifications } from '../services/pushService';
 import { RootState } from '../store';
 import {
   WrenchScrewdriverIcon,
@@ -58,7 +59,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const shouldBeOpen = isDesktop || isOpen;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await unsubscribeFromPushNotifications();
     dispatch(logout() as any);
     navigate('/login');
   };
@@ -161,8 +163,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
           )}
 
-          {/* Reports - Jefe & Sistemas */}
-          {(user?.rol === 'jefe' || user?.rol === 'sistemas') && (
+          {/* Reports - Jefe, Sistemas & Compras */}
+          {(user?.rol === 'jefe' || user?.rol === 'sistemas' || user?.rol === 'compras') && (
             <button ref={refIfActive('/reports')} onClick={() => handleNavClick('/reports')} className={navClass('/reports')}>
               <DocumentChartBarIcon className="nav-icon" />
               <span className="nav-text">Reportes</span>

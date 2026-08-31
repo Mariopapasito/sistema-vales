@@ -17,6 +17,9 @@ import {
 } from '@heroicons/react/24/outline';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import BrandLoader from '../components/BrandLoader';
+import { useConfirm } from '../components/ConfirmDialog';
+import toast from 'react-hot-toast';
 import '../styles/Reports.css';
 
 const getBaseURL = () => {
@@ -41,6 +44,7 @@ interface Report {
 }
 
 export const Reports: React.FC = () => {
+  const confirm = useConfirm();
   const user = useSelector((state: RootState) => state.auth.user);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +124,19 @@ export const Reports: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file) => {
+      const selected = Array.from(files);
+      if (imagenes.length + selected.length > 10) {
+        setFormError('Puedes agregar un máximo de 10 imágenes por reporte');
+        e.target.value = '';
+        return;
+      }
+      const oversized = selected.find((file) => file.size > 10 * 1024 * 1024);
+      if (oversized) {
+        setFormError(`La imagen "${oversized.name}" supera el límite de 10 MB`);
+        e.target.value = '';
+        return;
+      }
+      selected.forEach((file) => {
         const reader = new FileReader();
         reader.onload = () => {
           setImagenes((prev) => [
@@ -134,6 +150,7 @@ export const Reports: React.FC = () => {
         };
         reader.readAsDataURL(file);
       });
+      e.target.value = '';
     }
   };
 
@@ -197,13 +214,20 @@ export const Reports: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('¿Estás seguro?')) {
-      try {
-        await api.delete(`/reports/${id}`);
-        fetchReports();
-      } catch (err) {
-        console.error('Error deleting report:', err);
-      }
+    const accepted = await confirm({
+      title: 'Eliminar reporte',
+      message: '¿Seguro que quieres eliminar este reporte? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      tone: 'danger',
+    });
+    if (!accepted) return;
+    try {
+      await api.delete(`/reports/${id}`);
+      toast.success('Reporte eliminado');
+      fetchReports();
+    } catch (err) {
+      console.error('Error deleting report:', err);
+      toast.error('No se pudo eliminar el reporte');
     }
   };
 
@@ -562,7 +586,7 @@ export const Reports: React.FC = () => {
 
                 <div className="form-actions">
                   <button type="submit" className="btn-submit" disabled={submitting}>
-                    {submitting ? 'Publicando...' : 'Publicar'}
+                    {submitting ? <BrandLoader variant="button" label="Publicando..." /> : 'Publicar'}
                   </button>
                   <button
                     type="button"
@@ -639,7 +663,7 @@ export const Reports: React.FC = () => {
           {/* Reports List - Simple Cards */}
           <div className="reports-list-simple">
             {loading ? (
-              <p>Cargando reportes...</p>
+              <BrandLoader variant="section" label="Cargando reportes..." />
             ) : reports.length === 0 ? (
               <p className="no-reports">No hay reportes aún</p>
             ) : user?.rol === 'jefe' ? (
@@ -721,9 +745,7 @@ export const Reports: React.FC = () => {
             <div className="preview-content">
               <div className="report-document-scroll">
                 {(!selectedReport.imagenes || selectedReport.imagenes.length === 0) ? (
-                  <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>
-                    Cargando imágenes...
-                  </div>
+                  <BrandLoader variant="section" label="Cargando imágenes..." />
                 ) : selectedReport.imagenes.map((image, idx) => {
                   const imageUrl = image.url.startsWith('data:') || image.url.startsWith('http')
                     ? image.url

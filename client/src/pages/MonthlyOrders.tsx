@@ -6,6 +6,8 @@ import api from '../services/api';
 import { PlusIcon, ChevronRightIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, Squares2X2Icon, HandThumbUpIcon, BellAlertIcon, ArrowDownTrayIcon, PrinterIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import * as XLSX from 'xlsx';
+import BrandLoader from '../components/BrandLoader';
+import toast from 'react-hot-toast';
 import '../styles/MonthlyOrders.css';
 
 interface MonthlyOrderItem {
@@ -75,7 +77,7 @@ export default function MonthlyOrders() {
 
   const downloadAsExcel = () => {
     if (orders.length === 0) {
-      alert('No hay pedidos para descargar');
+      toast.error('No hay pedidos para descargar');
       return;
     }
 
@@ -176,7 +178,7 @@ export default function MonthlyOrders() {
   };
 
   if (loading) {
-    return <span>Cargando pedidos...</span>;
+    return <BrandLoader variant="page" label="Cargando pedidos..." />;
   }
 
   const filtered = selectedType === 'todos' ? orders : orders.filter(o => o.tipo === selectedType);
@@ -246,11 +248,11 @@ export default function MonthlyOrders() {
         </div>
 
         {/* Create buttons based on role */}
-        {(['estacion', 'almacen', 'constructora'] as const).includes(user?.rol as any) && (() => {
-          // estacion: all types; almacen/constructora: only toner
-          const tiposPermitidos: Array<keyof typeof typeConfig> = user?.rol === 'estacion'
-            ? ['aceites', 'papeleria', 'limpieza', 'toner', 'imprenta']
-            : ['toner'];
+        {(['jefe', 'compras', 'estacion', 'almacen', 'constructora', 'sistemas'] as const).includes(user?.rol as any) && (() => {
+          // Sistemas, almacén y constructora solicitan solo tóner; los demás roles autorizados ven todos los tipos.
+          const tiposPermitidos: Array<keyof typeof typeConfig> = ['sistemas', 'almacen', 'constructora'].includes(user?.rol || '')
+            ? ['toner']
+            : ['aceites', 'papeleria', 'limpieza', 'toner', 'imprenta'];
           return (
             <div className="new-orders-row">
               {tiposPermitidos.map((tipo) => {
@@ -347,4 +349,3 @@ export default function MonthlyOrders() {
         </div>
   );
 }
-

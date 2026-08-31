@@ -3,8 +3,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: data.mensaje || 'Nueva notificacion',
-    icon: '/sidebar-logo.png',
-    badge: '/sidebar-logo.png',
+    icon: '/pwa-icon-192.png',
+    badge: '/pwa-icon-192.png',
     tag: 'orden-' + (data.orden_id || Date.now()),
     requireInteraction: data.prioridad === 'PARO',
     data: {

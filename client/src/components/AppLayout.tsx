@@ -3,6 +3,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import Sidebar from './Sidebar';
+import BrandLoader from './BrandLoader';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 
@@ -12,13 +13,7 @@ export default function AppLayout() {
 
   if (!initialized) {
     return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', background: 'var(--bg-primary, #0f172a)'
-      }}>
-        <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
-          borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      </div>
+      <BrandLoader variant="page" label="Preparando el sistema..." />
     );
   }
 

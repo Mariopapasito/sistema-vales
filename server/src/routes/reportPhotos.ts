@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
 import ReportPhoto from '../models/ReportPhoto';
 import User from '../models/User';
 import { protect, AuthRequest } from '../middleware/auth';
@@ -24,27 +23,14 @@ const upload = multer({
 router.get('/', protect, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
-    const requestedTipo = typeof req.query.tipo === 'string' ? req.query.tipo : undefined;
-
-    if (!['sistemas', 'compras', 'jefe', 'estacion'].includes(user?.rol || '')) {
+    if (!['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) {
       return res.status(403).json({ error: 'No tienes permisos para ver reportes' });
     }
 
     const whereClause: any = {};
 
-    if (requestedTipo && ['estacion', 'jefe'].includes(requestedTipo)) {
-      whereClause.tipo = requestedTipo;
-    }
-
-    if (user?.rol === 'estacion') {
+    if (user?.rol === 'sistemas' || user?.rol === 'compras') {
       whereClause.userId = user.id;
-      whereClause.tipo = 'estacion';
-    } else if (user?.rol === 'jefe' && !requestedTipo) {
-      whereClause.tipo = 'estacion';
-    } else if (user?.rol === 'jefe' && requestedTipo === 'jefe') {
-      whereClause.tipo = 'jefe';
-    } else if (user?.rol !== 'jefe' && user?.rol !== 'sistemas' && user?.rol !== 'compras') {
-      whereClause.userId = user?.id;
     }
 
     const reports = await ReportPhoto.findAll({
@@ -76,7 +62,7 @@ router.get('/:id', protect, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
 
-    if (!['sistemas', 'compras', 'jefe', 'estacion'].includes(user?.rol || '')) {
+    if (!['sistemas', 'compras', 'jefe'].includes(user?.rol || '')) {
       return res.status(403).json({ error: 'No tienes permisos' });
     }
 
@@ -86,15 +72,7 @@ router.get('/:id', protect, async (req: Request, res: Response) => {
 
     if (!report) return res.status(404).json({ error: 'Reporte no encontrado' });
 
-    if (user?.rol === 'estacion' && (report as any).userId !== user?.id) {
-      return res.status(403).json({ error: 'No tienes permisos' });
-    }
-
-    if (user?.rol !== 'jefe' && user?.rol !== 'sistemas' && user?.rol !== 'compras' && user?.rol !== 'estacion') {
-      return res.status(403).json({ error: 'No tienes permisos' });
-    }
-
-    if (user?.rol !== 'jefe' && user?.rol !== 'sistemas' && user?.rol !== 'compras' && (report as any).userId !== user?.id) {
+    if (user?.rol !== 'jefe' && (report as any).userId !== user?.id) {
       return res.status(403).json({ error: 'No tienes permisos' });
     }
 
@@ -109,9 +87,7 @@ router.get('/:id', protect, async (req: Request, res: Response) => {
 router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res: Response) => {
   try {
     const user = (req as AuthRequest).user;
-    const requestedTipo = typeof req.body.tipo === 'string' ? req.body.tipo : 'estacion';
-
-    if (!['sistemas', 'compras', 'jefe', 'estacion'].includes(user?.rol || '')) {
+    if (!['sistemas', 'compras'].includes(user?.rol || '')) {
       return res.status(403).json({ error: 'No tienes permisos para crear reportes' });
     }
 
@@ -119,15 +95,9 @@ router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res
       return res.status(400).json({ error: 'Al menos una imagen es requerida' });
     }
 
-    const tipo = user?.rol === 'estacion' ? 'estacion' : requestedTipo === 'jefe' ? 'jefe' : 'estacion';
-
-    if (user?.rol === 'estacion' && tipo !== 'estacion') {
-      return res.status(403).json({ error: 'Las estaciones solo pueden enviar bitácoras de estación' });
-    }
-
     const { titulo, descripcion, imageDescriptions } = req.body;
 
-    if (!titulo) {
+    if (!titulo || !String(titulo).trim()) {
       return res.status(400).json({ error: 'El título es requerido' });
     }
 
@@ -146,10 +116,10 @@ router.post('/', protect, upload.array('imagenes', 10), async (req: Request, res
     }));
 
     const report = await ReportPhoto.create({
-      titulo,
+      titulo: String(titulo).trim().slice(0, 255),
       descripcion: descripcion || '',
       imagenes,
-      tipo,
+      tipo: 'estacion',
       userId: user?.id || 0,
     });
 
@@ -181,7 +151,7 @@ router.delete('/:id', protect, async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Reporte no encontrado' });
     }
 
-    if (report.userId !== user?.id && !['jefe', 'sistemas'].includes(user?.rol || '')) {
+    if (report.userId !== user?.id && user?.rol !== 'jefe') {
       return res.status(403).json({ error: 'No tienes permisos para eliminar este reporte' });
     }
 

@@ -6,6 +6,9 @@ import api from '../services/api';
 import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, PencilSquareIcon, CheckIcon, XMarkIcon, CheckCircleIcon, BellAlertIcon, HandThumbUpIcon, ArrowDownTrayIcon, PrinterIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import OrderComments from '../components/OrderComments';
+import BrandLoader from '../components/BrandLoader';
+import { useConfirm } from '../components/ConfirmDialog';
+import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -45,6 +48,7 @@ const typeConfig = {
 export default function MonthlyOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { user } = useSelector((state: RootState) => state.auth);
 
   const [order, setOrder] = useState<MonthlyOrder | null>(null);
@@ -55,17 +59,23 @@ export default function MonthlyOrderDetail() {
   const [deleting, setDeleting] = useState(false);
   const [pdfMode, setPdfMode] = useState<'pedido' | 'revision' | null>(null);
 
-  const canDelete = ['jefe', 'sistemas'].includes(user?.rol || '');
+  const canDelete = user?.rol === 'jefe' || (!!order && order.createdBy === user?.id);
 
   const handleDelete = async () => {
     if (!order) return;
-    if (!window.confirm(`¿Seguro que quieres eliminar el pedido ${order.folio}? Esta acción no se puede deshacer.`)) return;
+    const accepted = await confirm({
+      title: 'Eliminar pedido',
+      message: `¿Seguro que quieres eliminar el pedido ${order.folio}? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      tone: 'danger',
+    });
+    if (!accepted) return;
     try {
       setDeleting(true);
       await api.delete(`/monthly-orders/${order.id}`);
       navigate('/monthly-orders');
     } catch (err: any) {
-      alert('Error al eliminar: ' + (err.response?.data?.error || err.message));
+      toast.error('Error al eliminar: ' + (err.response?.data?.error || err.message));
     } finally {
       setDeleting(false);
     }
@@ -116,7 +126,7 @@ export default function MonthlyOrderDetail() {
       setIsEditing(false);
       fetchOrder();
     } catch (error: any) {
-      alert('Error: ' + (error.response?.data?.error || error.message));
+      toast.error('Error: ' + (error.response?.data?.error || error.message));
     } finally {
       setSaving(false);
     }
@@ -222,7 +232,7 @@ export default function MonthlyOrderDetail() {
     } catch (err) {
       console.error('Error generando PDF:', err);
       setPdfMode(null);
-      alert('Error al generar PDF');
+      toast.error('Error al generar PDF');
     }
   };
 
@@ -231,14 +241,14 @@ export default function MonthlyOrderDetail() {
       await api.patch(`/monthly-orders/${order?.id}/confirmar`);
       fetchOrder();
     } catch (error: any) {
-      alert('Error: ' + (error.response?.data?.error || error.message));
+      toast.error('Error: ' + (error.response?.data?.error || error.message));
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <span>Cargando pedido...</span>;
+    return <BrandLoader variant="page" label="Cargando pedido..." />;
   }
 
   if (!order) {
@@ -246,21 +256,22 @@ export default function MonthlyOrderDetail() {
   }
 
   const cfg = typeConfig[order.tipo];
-  const canEdit = (user?.rol === 'compras' || user?.rol === 'jefe') ||
-    (user?.rol === 'estacion' && order.createdBy === user?.id && order.estado !== 'completado');
+  const stationSideRoles = ['estacion', 'almacen', 'constructora'];
+  const canEdit = user?.rol === 'compras' || user?.rol === 'jefe' ||
+    (order.createdBy === user?.id && order.estado !== 'completado');
 
-  const myConfirmation = user?.rol === 'estacion'
+  const myConfirmation = stationSideRoles.includes(user?.rol || '')
     ? order.confirmadoEstacion
     : ['compras', 'jefe'].includes(user?.rol || '')
       ? order.confirmadoCompras
       : true; // other roles don't need to confirm
 
-  const otherConfirmed = user?.rol === 'estacion'
+  const otherConfirmed = stationSideRoles.includes(user?.rol || '')
     ? order.confirmadoCompras
     : order.confirmadoEstacion;
 
   const showConfirmBtn = order.estado !== 'completado' && !myConfirmation &&
-    (user?.rol === 'estacion' || user?.rol === 'compras' || user?.rol === 'jefe');
+    (stationSideRoles.includes(user?.rol || '') || user?.rol === 'compras' || user?.rol === 'jefe');
 
   const hideExistencias = pdfMode === 'pedido';
 
@@ -423,10 +434,9 @@ export default function MonthlyOrderDetail() {
                       Editar
                     </button>
                   )}
-                  {canEdit && order.estado !== 'completado' && (
+                  {showConfirmBtn && (
                     <button className="btn-glass-complete" onClick={handleConfirmar} disabled={saving}>
-                      <CheckCircleIcon style={{ width: 16, height: 16 }} />
-                      {saving ? 'Guardando...' : 'Marcar Completado'}
+                      {saving ? <BrandLoader variant="button" label="Guardando..." /> : <><CheckCircleIcon style={{ width: 16, height: 16 }} /> Marcar Completado</>}
                     </button>
                   )}
                   {canDelete && (
@@ -448,7 +458,7 @@ export default function MonthlyOrderDetail() {
                         opacity: deleting ? 0.6 : 1,
                       }}
                     >
-                      🗑 {deleting ? 'Eliminando...' : 'Eliminar pedido'}
+                      {deleting ? <BrandLoader variant="button" label="Eliminando..." /> : <>🗑 Eliminar pedido</>}
                     </button>
                   )}
                 </>
@@ -459,8 +469,7 @@ export default function MonthlyOrderDetail() {
                     Cancelar
                   </button>
                   <button className="btn-glass-save" onClick={handleSave} disabled={saving}>
-                    <CheckIcon style={{ width: 16, height: 16 }} />
-                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                    {saving ? <BrandLoader variant="button" label="Guardando..." /> : <><CheckIcon style={{ width: 16, height: 16 }} /> Guardar Cambios</>}
                   </button>
                 </>
               )}

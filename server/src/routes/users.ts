@@ -1,4 +1,4 @@
-import express, { Response } from 'express';
+import express, { NextFunction, Response } from 'express';
 import bcrypt from 'bcrypt';
 import User from '../models/User';
 import { protect } from '../middleware/auth';
@@ -6,7 +6,7 @@ import { AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
-const canManageUsers = (req: AuthRequest, res: Response, next: Function) => {
+const canManageUsers = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.user || !['jefe', 'sistemas'].includes(req.user.rol)) {
     res.status(403).json({ message: 'No autorizado' });
     return;

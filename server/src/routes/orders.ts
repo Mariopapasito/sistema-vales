@@ -8,7 +8,9 @@ import WorkReport from '../models/WorkReport';
 import OrderComment from '../models/OrderComment';
 import { protect, AuthRequest } from '../middleware/auth';
 import NotificationService from '../services/notificationService';
+import { validateOrderForward } from '../domain/permissions';
 import { logActivity } from '../utils/activityLogger';
+import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
@@ -87,7 +89,7 @@ router.get('/stats', protect, async (req: AuthRequest, res) => {  try {
 
     if (!userRole) return res.status(401).json({ message: 'User role not found' });
 
-    let where: any = {};
+    const where: any = {};
     if (ESTACION_LIKE.includes(userRole)) where.usuarioId = userId;
     else if (userRole === 'sistemas') {
       where[Op.or] = [
@@ -160,7 +162,7 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     if (!userRole) return res.status(401).json({ message: 'User role not found' });
 
     // Role-based base filter
-    let where: any = {};
+    const where: any = {};
     if (ESTACION_LIKE.includes(userRole || '')) where.usuarioId = userId;
     else if (userRole === 'sistemas') {
       where[Op.or] = [
@@ -297,48 +299,53 @@ router.post('/', protect, async (req: AuthRequest, res) => {
 
     if (userRole === 'compras' && tipo !== 'sistemas')
       return res.status(403).json({ message: 'Compras can only create sistemas orders' });
+    if (!['Alta', 'Baja', 'Paro', 'Correctivo'].includes(prioridad))
+      return res.status(400).json({ message: 'Prioridad inválida' });
+    if (typeof descripcion !== 'string' || !descripcion.trim())
+      return res.status(400).json({ message: 'La descripción es obligatoria' });
+    if (imagenes !== undefined && (!Array.isArray(imagenes) || imagenes.length > 5))
+      return res.status(400).json({ message: 'Las imágenes deben ser una lista de máximo 5 elementos' });
 
-    const lastOrder = await Order.findOne({ order: [['id', 'DESC']] });
-    const newFolio = `ORD-${String(1001 + (lastOrder?.id || 0)).padStart(5, '0')}`;
-
-    const order = await Order.create({
-      folio: newFolio,
-      usuarioId: userId,
-      prioridad,
-      localizacion: userEstacion,
-      descripcion,
-      observaciones,
-      tipo,
-      imagenes: Array.isArray(imagenes) ? imagenes : [],
-      estado: 'Sin iniciar',
-      confirmadoEstacion: false,
-      confirmadoProveedor: false,
-      historialCambios: [{
-        quien: req.user?.nombre,
-        rol: userRole,
-        accion: 'Creada',
+    const order = await sequelize.transaction(async (transaction) => {
+      const created = await Order.create({
+        folio: `TMP-${randomUUID()}`,
+        usuarioId: userId,
+        prioridad,
+        localizacion: userEstacion,
+        descripcion: descripcion.trim(),
+        observaciones: typeof observaciones === 'string' ? observaciones.trim() : '',
+        tipo,
+        imagenes: Array.isArray(imagenes) ? imagenes : [],
         estado: 'Sin iniciar',
-        timestamp: new Date().toISOString(),
-        hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      }]
+        confirmadoEstacion: false,
+        confirmadoProveedor: false,
+        historialCambios: [{
+          quien: req.user?.nombre,
+          rol: userRole,
+          accion: 'Creada',
+          estado: 'Sin iniciar',
+          timestamp: new Date().toISOString(),
+          hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        }]
+      }, { transaction });
+
+      created.folio = `ORD-${String(1000 + created.id).padStart(5, '0')}`;
+      await created.save({ transaction });
+
+      if (tipo === 'sistemas') {
+        await WorkReport.create({
+          number: `WR-${String(created.id).padStart(4, '0')}`,
+          orderId: created.id,
+          createdById: userId,
+          assignedToId: userId,
+          station: userEstacion || '',
+          faultDescription: descripcion.trim(),
+          attendedBy: req.user?.nombre || '',
+          completed: false,
+        }, { transaction });
+      }
+      return created;
     });
-
-    // Auto-create WorkReport for 'sistemas' orders
-    if (tipo === 'sistemas') {
-      const currentUser = await User.findByPk(userId);
-      await WorkReport.create({
-        number: `WR-${String(order.id).padStart(4, '0')}`,
-        orderId: order.id,
-        createdById: userId,
-        assignedToId: userId,
-        station: currentUser?.estacion || userEstacion || '',
-        faultDescription: descripcion,
-        attendedBy: currentUser?.nombre || '',
-        completed: false,
-      });
-
-
-    }
 
     // Enviar notificaciones según el tipo de orden
     try {
@@ -446,25 +453,12 @@ router.patch('/:id/reenviar', protect, async (req: AuthRequest, res) => {
     const userRole = req.user?.rol;
     const { tipo } = req.body as { tipo?: 'sistemas' | 'compras' };
 
-    if (!['sistemas', 'compras'].includes(userRole || '')) {
-      return res.status(403).json({ message: 'Solo Sistemas y Compras pueden reenviar vales' });
-    }
-
-    if (!tipo || !['sistemas', 'compras'].includes(tipo)) {
-      return res.status(400).json({ message: 'El destino debe ser sistemas o compras' });
-    }
-
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ message: 'Vale no encontrado' });
 
-    // Cada área únicamente puede reenviar los vales que están en su propia bandeja.
-    if (order.tipo !== userRole) {
-      return res.status(403).json({ message: 'Solo el área responsable actual puede reenviar este vale' });
-    }
-
-    if (tipo === order.tipo) {
-      return res.status(400).json({ message: 'El vale ya pertenece al área seleccionada' });
-    }
+    const policy = validateOrderForward(userRole, order.tipo, tipo);
+    if (!policy.allowed) return res.status(policy.status!).json({ message: policy.message });
+    const destination = tipo as 'sistemas' | 'compras';
 
     const tipoAnterior = order.tipo;
     const ahora = new Date();
@@ -472,20 +466,20 @@ router.patch('/:id/reenviar', protect, async (req: AuthRequest, res) => {
     historial.push({
       quien: req.user?.nombre,
       rol: userRole,
-      accion: `Reenvió el vale de ${tipoAnterior === 'sistemas' ? 'Sistemas' : 'Compras'} a ${tipo === 'sistemas' ? 'Sistemas' : 'Compras'}`,
+      accion: `Reenvió el vale de ${tipoAnterior === 'sistemas' ? 'Sistemas' : 'Compras'} a ${destination === 'sistemas' ? 'Sistemas' : 'Compras'}`,
       tipoAnterior,
-      tipoNuevo: tipo,
+      tipoNuevo: destination,
       estado: order.estado,
       timestamp: ahora.toISOString(),
       hora: ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     });
 
-    order.tipo = tipo;
+    order.tipo = destination;
     order.historialCambios = historial;
     await order.save();
 
     // Los vales que llegan a Sistemas necesitan su orden de trabajo.
-    if (tipo === 'sistemas') {
+    if (destination === 'sistemas') {
       const existingWorkReport = await WorkReport.findOne({ where: { orderId: order.id } });
       if (!existingWorkReport) {
         await WorkReport.create({
@@ -509,24 +503,24 @@ router.patch('/:id/reenviar', protect, async (req: AuthRequest, res) => {
       accion: 'ORDEN_REENVIADA',
       entidad: 'orden',
       entidadId: order.id,
-      detalle: `Folio: ${order.folio} | ${tipoAnterior} → ${tipo} | Estado conservado: ${order.estado}`,
+      detalle: `Folio: ${order.folio} | ${tipoAnterior} → ${destination} | Estado conservado: ${order.estado}`,
     });
 
     try {
       const ns = new NotificationService();
-      await ns.notifyByRoles([tipo, 'jefe'], {
+      await ns.notifyByRoles([destination, 'jefe'], {
         tipo: 'SYSTEM',
         titulo: '📨 Vale reenviado',
-        mensaje: `${req.user?.nombre} reenvió ${order.folio} a ${tipo === 'sistemas' ? 'Sistemas' : 'Compras'}`,
-        datos: { orderId: order.id, folio: order.folio, tipo, tipoAnterior }
+        mensaje: `${req.user?.nombre} reenvió ${order.folio} a ${destination === 'sistemas' ? 'Sistemas' : 'Compras'}`,
+        datos: { orderId: order.id, folio: order.folio, tipo: destination, tipoAnterior }
       }, req.userId);
 
       if (order.usuarioId !== req.userId) {
         await ns.notifyUser(order.usuarioId, {
           tipo: 'SYSTEM',
           titulo: '📨 Vale reenviado',
-          mensaje: `${order.folio} fue reenviado a ${tipo === 'sistemas' ? 'Sistemas' : 'Compras'}`,
-          datos: { orderId: order.id, folio: order.folio, tipo, tipoAnterior }
+          mensaje: `${order.folio} fue reenviado a ${destination === 'sistemas' ? 'Sistemas' : 'Compras'}`,
+          datos: { orderId: order.id, folio: order.folio, tipo: destination, tipoAnterior }
         });
       }
     } catch (notifErr) {

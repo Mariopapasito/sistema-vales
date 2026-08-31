@@ -28,6 +28,7 @@ export const NotificationCenter: React.FC = () => {
       CALENDAR_EVENT: <CalendarDaysIcon style={{ width: 18, height: 18 }} />,
       SYSTEM: <Cog6ToothIcon style={{ width: 18, height: 18 }} />,
       MENTION: <AtSymbolIcon style={{ width: 18, height: 18 }} />,
+      COMMENT: <AtSymbolIcon style={{ width: 18, height: 18 }} />,
     };
     return iconMap[tipo] || <MapPinIcon style={{ width: 18, height: 18 }} />;
   };

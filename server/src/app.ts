@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import http from 'http';
 import path from 'path';
 import { connectDB } from './config/database';
+import { runSchemaMigrations } from './config/schemaMigrations';
 
 import authRoutes from './routes/auth';
 import orderRoutes from './routes/orders';
@@ -30,13 +31,9 @@ import monthlyOrderCommentRoutes from './routes/monthlyOrderComments';
 import notificationRoutes from './routes/notifications';
 import orderCommentRoutes from './routes/orderComments';
 import activityLogsRoutes from './routes/activityLogs';
-import ActivityLog from './models/ActivityLog';
-import DirectMessage from './models/DirectMessage';
 import messagesRoutes from './routes/messages';
 import bitacoraRoutes from './routes/bitacoras';
 import Bitacora from './models/Bitacora';
-
-import sequelize from './config/database';
 
 const app = express();
 
@@ -101,14 +98,6 @@ app.use(express.static('public', {
   }
 })); // Servir archivos estáticos
 
-connectDB().catch(err => {
-  console.error('Failed to connect to database:', err);
-  // Retry once after 5s instead of crashing
-  setTimeout(() => {
-    connectDB().catch(() => process.exit(1));
-  }, 5000);
-});
-
 // Configurar asociaciones
 User.hasMany(Order, { foreignKey: 'usuarioId' });
 Order.belongsTo(User, { foreignKey: 'usuarioId' });
@@ -160,69 +149,6 @@ MonthlyOrderComment.belongsTo(MonthlyOrder, { foreignKey: 'monthlyOrderId' });
 MonthlyOrderComment.belongsTo(User, { foreignKey: 'usuarioId', as: 'author' });
 User.hasMany(MonthlyOrderComment, { foreignKey: 'usuarioId' });
 
-// Sincronizar base de datos
-(async () => {
-  try {
-    await sequelize.sync({ force: false, alter: false });
-    // Create push_subscriptions table if not exists (not a Sequelize model)
-    await sequelize.query(`
-      CREATE TABLE IF NOT EXISTS push_subscriptions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        endpoint TEXT NOT NULL,
-        p256dh VARCHAR(255) NOT NULL,
-        auth VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_endpoint (endpoint(255)),
-        INDEX idx_user_id (user_id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `);
-    await ActivityLog.sync({ force: false });
-    await DirectMessage.sync({ force: false });
-    // Migrate bitacoras created by versions that only used browser storage.
-    const bitacoraCols = await sequelize.query('SHOW COLUMNS FROM bitacoras').catch(() => [] as any[]);
-    const hasLegacyId = Array.isArray(bitacoraCols[0]) && bitacoraCols[0].some((col: any) => col.Field === 'legacyId');
-    if (!hasLegacyId) {
-      await sequelize.query('ALTER TABLE bitacoras ADD COLUMN legacyId VARCHAR(191) NULL');
-    }
-    const bitacoraIndexes = await sequelize.query('SHOW INDEX FROM bitacoras').catch(() => [] as any[]);
-    const hasLegacyIndex = Array.isArray(bitacoraIndexes[0]) && bitacoraIndexes[0].some((idx: any) => idx.Key_name === 'bitacoras_user_legacy');
-    if (!hasLegacyIndex) {
-      await sequelize.query('CREATE UNIQUE INDEX bitacoras_user_legacy ON bitacoras (userId, legacyId)');
-    }
-    // Ensure users.rol ENUM includes almacen and constructora
-    await sequelize.query(`
-      ALTER TABLE users MODIFY COLUMN rol ENUM('jefe','sistemas','estacion','compras','almacen','constructora','marketing') NOT NULL DEFAULT 'estacion'
-    `).catch(() => { /* already up to date */ });
-    // Ensure users.estacion allows NULL (for roles like jefe/sistemas that don't have a station)
-    await sequelize.query(`
-      ALTER TABLE users MODIFY COLUMN estacion VARCHAR(255) NULL
-    `).catch(() => { /* already up to date */ });
-    // Ensure report_photos stores the bitácora category for stations and bosses
-    const reportPhotoCols = await sequelize.query('SHOW COLUMNS FROM report_photos').catch(() => [] as any[]);
-    const hasTipoColumn = Array.isArray(reportPhotoCols[0]) && reportPhotoCols[0].some((col: any) => col.Field === 'tipo');
-    if (!hasTipoColumn) {
-      await sequelize.query(`
-        ALTER TABLE report_photos ADD COLUMN tipo ENUM('estacion','jefe') NOT NULL DEFAULT 'estacion'
-      `);
-      await sequelize.query(`
-        UPDATE report_photos SET tipo = 'estacion' WHERE tipo IS NULL OR tipo = ''
-      `);
-    }
-    // Ensure notifications.tipo ENUM includes COMMENT
-    await sequelize.query(`
-      ALTER TABLE notifications MODIFY COLUMN tipo ENUM('NEW_ORDER','ORDER_STATUS_CHANGED','CALENDAR_EVENT','SYSTEM','MENTION','COMMENT') NOT NULL
-    `).catch(() => { /* already up to date */ });
-    // Ensure monthly_orders.tipo ENUM includes toner and imprenta
-    await sequelize.query(`
-      ALTER TABLE monthly_orders MODIFY COLUMN tipo ENUM('aceites','papeleria','limpieza','toner','imprenta') NOT NULL
-    `).catch(() => { /* already up to date */ });
-    // keep running — DB already up to date
-  } catch (error) {
-    console.error('[DB] Failed to sync database:', error);
-  }
-})();
-
 if (isProd) {
   const clientBuild = path.join(__dirname, '../../client/dist');
   app.use(express.static(clientBuild));
@@ -264,10 +190,22 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 
 const httpServer = http.createServer(app);
 
-httpServer.listen(PORT, '0.0.0.0', () => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[DEV] Server on http://0.0.0.0:${PORT}`);
-  }
-});
+export const startServer = async (): Promise<void> => {
+  await connectDB();
+  await runSchemaMigrations();
+
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV] Server on http://0.0.0.0:${PORT}`);
+    }
+  });
+};
+
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error('[STARTUP] No se pudo iniciar el servidor:', error);
+    process.exit(1);
+  });
+}
 
 export default app;

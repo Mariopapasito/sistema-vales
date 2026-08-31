@@ -1,6 +1,8 @@
 import Notification from '../models/Notification';
 import User from '../models/User';
 import { sendPushToRole, sendPushToUser } from '../routes/push';
+import { Op } from 'sequelize';
+import { isDifferentUser, selectNotificationRecipientIds } from '../domain/notificationRecipients';
 
 interface NotificationData {
   tipo: 'NEW_ORDER' | 'ORDER_STATUS_CHANGED' | 'CALENDAR_EVENT' | 'SYSTEM' | 'COMMENT';
@@ -16,14 +18,11 @@ export class NotificationService {
     excludeUserId?: number
   ) {
     try {
-      const { Op } = require('sequelize');
       const users = await User.findAll({
-        where: { rol: { [Op.in]: roles } }
+        where: { rol: { [Op.in]: [...new Set(roles)] }, activo: true }
       });
 
-      const targetUserIds = users
-        .map((u: any) => u.id as number)
-        .filter((id: number) => id !== excludeUserId);
+      const targetUserIds = selectNotificationRecipientIds(users, excludeUserId);
 
       await this.createNotificationsForUsers(targetUserIds, notificationData);
 
@@ -44,6 +43,7 @@ export class NotificationService {
 
   async createNotificationsForUsers(userIds: number[], notificationData: NotificationData) {
     try {
+      if (userIds.length === 0) return;
       const notifications = userIds.map((userId: number) => ({
         usuarioId: userId,
         tipo: notificationData.tipo,
@@ -59,8 +59,9 @@ export class NotificationService {
     }
   }
 
-  async notifyUser(userId: number, notificationData: NotificationData) {
+  async notifyUser(userId: number, notificationData: NotificationData, excludeUserId?: number) {
     try {
+      if (!isDifferentUser(userId, excludeUserId)) return;
       await Notification.create({
         usuarioId: userId,
         tipo: notificationData.tipo,
@@ -122,7 +123,7 @@ export class NotificationService {
       }
     };
 
-    await this.notifyByRoles(['sistemas', 'jefe', 'estacion', 'almacen', 'constructora', 'marketing'], notificationData);
+    await this.notifyByRoles(['sistemas', 'jefe', 'estacion', 'almacen', 'constructora', 'marketing'], notificationData, changedBy.id);
   }
 }
 

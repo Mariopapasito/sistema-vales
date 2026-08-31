@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../services/api';
 import { RootState } from '../store';
+import BrandLoader from '../components/BrandLoader';
 import '../styles/Reports.css';
 
 type ToggleValue = 'SI' | 'NO' | '';
@@ -353,6 +354,16 @@ const getStationReportStorageKey = (stationName: string = '') => {
 
 const registeredArchiveKey = 'bitacora-registrada-list';
 
+const readStoredJson = <T,>(key: string): T | null => {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) as T : null;
+  } catch {
+    window.localStorage.removeItem(key);
+    return null;
+  }
+};
+
 const Bitacoras: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const stationSheetRef = useRef<HTMLDivElement>(null);
@@ -364,8 +375,7 @@ const Bitacoras: React.FC = () => {
 
   const [stationForm, setStationForm] = useState<StationFormState>(() => {
     const currentStationName = isEstacion ? stationUserName : '';
-    const saved = window.localStorage.getItem(isEstacion ? getStationReportStorageKey(currentStationName) : 'bitacora-estacion');
-    const parsed = saved ? JSON.parse(saved) : null;
+    const parsed = readStoredJson<Partial<StationFormState>>(isEstacion ? getStationReportStorageKey(currentStationName) : 'bitacora-estacion');
     const fallback = {
       ...initialStationForm,
       estacion: currentStationName || initialStationForm.estacion,
@@ -383,8 +393,8 @@ const Bitacoras: React.FC = () => {
     };
   });
   const [weeklyForm, setWeeklyForm] = useState<WeeklyFormState>(() => {
-    const saved = window.localStorage.getItem('bitacora-jefe');
-    return saved ? { ...initialWeeklyForm, ...JSON.parse(saved) } : { ...initialWeeklyForm, fecha: formatDateForInput(new Date()) };
+    const saved = readStoredJson<Partial<WeeklyFormState>>('bitacora-jefe');
+    return saved ? { ...initialWeeklyForm, ...saved } : { ...initialWeeklyForm, fecha: formatDateForInput(new Date()) };
   });
   const [registeredBitacoras, setRegisteredBitacoras] = useState<RegisteredBitacora[]>([]);
   const [archiveLoading, setArchiveLoading] = useState(true);
@@ -395,6 +405,29 @@ const Bitacoras: React.FC = () => {
   const [stationOptions, setStationOptions] = useState<string[]>([]);
 
   const [selectedType, setSelectedType] = useState<'station' | 'weekly' | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const key = isEstacion ? getStationReportStorageKey(stationUserName) : 'bitacora-estacion';
+        window.localStorage.setItem(key, JSON.stringify(stationForm));
+      } catch {
+        // El guardado definitivo en servidor sigue disponible aunque falle el almacenamiento local.
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [isEstacion, stationForm, stationUserName]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem('bitacora-jefe', JSON.stringify(weeklyForm));
+      } catch {
+        // El guardado definitivo en servidor sigue disponible aunque falle el almacenamiento local.
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [weeklyForm]);
 
   const loadBitacoras = async () => {
     try {
@@ -722,7 +755,7 @@ const Bitacoras: React.FC = () => {
         <div className="bitacora-panel">
           <div className="bitacora-actions">
             <button type="button" className="btn-save-bitacora secondary" onClick={() => setSelectedType(null)}>Regresar</button>
-            <button type="button" className="btn-save-bitacora" onClick={saveStationReport} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
+            <button type="button" className="btn-save-bitacora" onClick={saveStationReport} disabled={saving}>{saving ? <BrandLoader variant="button" label="Guardando..." /> : 'Guardar'}</button>
             <button type="button" className="btn-save-bitacora secondary" onClick={() => exportPdf('station')}>
               <ArrowDownTrayIcon style={{ width: 18, height: 18 }} /> Descargar PDF
             </button>
@@ -829,7 +862,7 @@ const Bitacoras: React.FC = () => {
         <div className="bitacora-panel">
           <div className="bitacora-actions">
             <button type="button" className="btn-save-bitacora secondary" onClick={() => setSelectedType(null)}>Regresar</button>
-            <button type="button" className="btn-save-bitacora" onClick={saveWeeklyReport} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
+            <button type="button" className="btn-save-bitacora" onClick={saveWeeklyReport} disabled={saving}>{saving ? <BrandLoader variant="button" label="Guardando..." /> : 'Guardar'}</button>
             <button type="button" className="btn-save-bitacora secondary" onClick={() => exportPdf('jefe')}>
               <ArrowDownTrayIcon style={{ width: 18, height: 18 }} /> Descargar PDF
             </button>
@@ -925,7 +958,7 @@ const Bitacoras: React.FC = () => {
           </div>
         )}
         {archiveLoading ? (
-          <p className="bitacora-registered-empty">Cargando bitácoras...</p>
+          <BrandLoader variant="section" label="Cargando bitácoras..." />
         ) : archiveEntries.length > 0 ? (
           <div className="bitacora-registered-grid">
             {archiveEntries.map((entry) => (

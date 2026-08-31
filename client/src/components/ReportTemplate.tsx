@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 import '../styles/ReportTemplate.css';
 
 interface WorkReport {
@@ -103,10 +104,10 @@ const ReportTemplate: React.FC<ReportTemplateProps> = ({ workReport, order, onUp
         onUpdate(response.data.report || response.data);
       }
       setIsEditing(false);
-      alert('Orden actualizada exitosamente');
+      toast.success('Orden actualizada exitosamente');
     } catch (error: any) {
       console.error('Error:', error);
-      alert('Error al actualizar: ' + (error.response?.data?.message || error.message));
+      toast.error('Error al actualizar: ' + (error.response?.data?.message || error.message));
     }
   };
 

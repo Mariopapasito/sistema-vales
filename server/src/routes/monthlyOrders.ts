@@ -1,21 +1,30 @@
 import express, { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { protect as authMiddleware } from '../middleware/auth';
 import MonthlyOrder from '../models/MonthlyOrder';
 import User from '../models/User';
 import { logActivity } from '../utils/activityLogger';
+import { randomUUID } from 'crypto';
 
 const router = express.Router();
+const MONTHLY_ROLES = ['jefe', 'compras', 'estacion', 'almacen', 'constructora', 'sistemas'];
+const STATION_ROLES = ['estacion', 'almacen', 'constructora'];
+
+const canViewMonthlyOrder = (user: any, order: any): boolean => {
+  if (!MONTHLY_ROLES.includes(user?.rol)) return false;
+  if (user.rol === 'jefe' || user.rol === 'compras') return true;
+  if (user.rol === 'sistemas') return order.tipo === 'toner';
+  return STATION_ROLES.includes(user.rol) && order.estacion === (user.estacion || user.nombre);
+};
 
 // Get monthly orders for current user
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    if (!MONTHLY_ROLES.includes(user?.rol)) return res.status(403).json({ error: 'No tienes permisos' });
 
     // Estaciones y roles similares ven solo sus pedidos; Compras y Jefe ven todos; Sistemas solo toner
-    const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
-    let where: any = {};
-    if (ESTACION_LIKE.includes(user.rol)) {
+    const where: any = {};
+    if (STATION_ROLES.includes(user.rol)) {
       where.estacion = user.estacion || user.nombre;
     } else if (user.rol === 'sistemas') {
       where.tipo = 'toner';
@@ -52,6 +61,8 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
     if (!order) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
+    const user = (req as any).user;
+    if (!canViewMonthlyOrder(user, order)) return res.status(403).json({ error: 'No tienes permisos' });
     res.json({ success: true, data: order });
   } catch (error: any) {
     res.status(500).json({ message: "Internal server error" });
@@ -64,25 +75,47 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     const user = (req as any).user;
     const { tipo, estacion, items } = req.body;
 
+    if (!MONTHLY_ROLES.includes(user?.rol)) return res.status(403).json({ error: 'No tienes permisos' });
+
     if (!tipo) {
       logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: 'Fallo al crear pedido: falta campo "tipo"' });
       return res.status(400).json({ message: 'El campo tipo es requerido' });
     }
+    if (!['aceites', 'papeleria', 'limpieza', 'toner', 'imprenta'].includes(tipo)) {
+      return res.status(400).json({ error: 'Tipo de pedido inválido' });
+    }
+    if (['sistemas', 'almacen', 'constructora'].includes(user.rol) && tipo !== 'toner') {
+      return res.status(403).json({ error: 'Este rol solo puede crear pedidos de tóner' });
+    }
 
-    // Generate unique folio
-    const folio = `PEDIDO-${tipo.toUpperCase().slice(0, 1)}-${Date.now()}`;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Agrega al menos un artículo al pedido' });
+    }
+    const validItems = items
+      .filter((item: any) => item && (String(item.descripcion || '').trim() || Number(item.cantidad) > 0))
+      .map((item: any) => ({
+        descripcion: String(item.descripcion || '').trim(),
+        consumibles: Boolean(item.consumibles),
+        intercambiables: Boolean(item.intercambiables),
+        existencias: String(item.existencias || '').trim(),
+        unidad: String(item.unidad || '').trim(),
+        cantidad: Math.max(0, Number(item.cantidad) || 0),
+      }));
+    if (validItems.length === 0) return res.status(400).json({ error: 'El pedido no puede estar vacío' });
+
+    const folio = `PEDIDO-${tipo.toUpperCase().slice(0, 1)}-${Date.now()}-${randomUUID().slice(0, 6).toUpperCase()}`;
 
     const order = await MonthlyOrder.create({
       folio,
       tipo,
       estacion: estacion || user.estacion || user.nombre,
       fecha: new Date(),
-      items: items || [],
+      items: validItems,
       estado: 'borrador',
       createdBy: user.id
     });
 
-    logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_CREADO', entidad: 'pedido_mensual', detalle: `Folio: ${folio} | Tipo: ${tipo} | Estación: ${estacion || user.estacion || user.nombre} | Artículos: ${(items || []).length}` });
+    logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_CREADO', entidad: 'pedido_mensual', detalle: `Folio: ${folio} | Tipo: ${tipo} | Estación: ${estacion || user.estacion || user.nombre} | Artículos: ${validItems.length}` });
 
     res.json({ success: true, data: order });
   } catch (error: any) {
@@ -134,8 +167,7 @@ router.patch('/:id/confirmar', authMiddleware, async (req: Request, res: Respons
     const order = await MonthlyOrder.findByPk(req.params.id);
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
 
-    const ESTACION_LIKE = ['estacion', 'almacen', 'constructora', 'marketing'];
-    if (ESTACION_LIKE.includes(user.rol)) {
+    if (STATION_ROLES.includes(user.rol)) {
       const orderEstacion = (order as any).estacion;
       if (orderEstacion !== user.estacion && orderEstacion !== user.nombre) {
         logActivity({ req, usuarioId: user.id, usuarioNombre: user.nombre, usuarioRol: user.rol, accion: 'PEDIDO_ERROR', entidad: 'pedido_mensual', detalle: `Sin permiso para confirmar pedido ${(order as any).folio} (estación no coincide)` });

@@ -1,0 +1,2 @@
+.draft-status { display: inline-flex; align-items: center; gap: .35rem; color: #64748b; font-size: .78rem; font-weight: 600; }
+.draft-status svg { width: 16px; height: 16px; color: #315bd4; }

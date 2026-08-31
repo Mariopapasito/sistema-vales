@@ -4,15 +4,22 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
+import AppErrorBoundary from './components/AppErrorBoundary';
+import { ConfirmProvider } from './components/ConfirmDialog';
 import { store } from './store';
 import './index.css';
 import './styles/global.css';
+import './styles/LiquidGlass.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>
-        <App />
+        <AppErrorBoundary>
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
+        </AppErrorBoundary>
         <Toaster
           position="top-center"
           toastOptions={{

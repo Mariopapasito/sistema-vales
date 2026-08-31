@@ -3,6 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from '../components/BrandLoader';
+import DraftStatus from '../components/DraftStatus';
+import { useAutosavedDraft } from '../hooks/useAutosavedDraft';
+import toast from 'react-hot-toast';
 import { ArrowLeftIcon, ArchiveBoxIcon, DocumentTextIcon, SparklesIcon, CheckIcon, XMarkIcon, PlusIcon, PrinterIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import '../styles/CreateMonthlyOrder.css';
@@ -35,6 +39,13 @@ export default function CreateMonthlyOrder() {
     descripcion: '', consumibles: false, intercambiables: false, existencias: '', unidad: '', cantidad: 0
   })));
   const [loading, setLoading] = useState(false);
+  const { savedAt, clearDraft } = useAutosavedDraft({
+    storageKey: user?.id && tipo ? `draft:monthly-order:${user.id}:${tipo}` : null,
+    value: items,
+    onRestore: (draft) => {
+      if (Array.isArray(draft) && draft.length > 0) setItems(draft);
+    },
+  });
 
   const addRows = (n = 5) => {
     setItems(prev => [...prev, ...Array(n).fill(null).map(() => ({
@@ -61,7 +72,7 @@ export default function CreateMonthlyOrder() {
   const handleSave = async () => {
     const filledItems = items.filter(i => i.descripcion || i.cantidad > 0);
     if (filledItems.length === 0) {
-      alert('El pedido no puede estar vacío. Agrega al menos un artículo con descripción o cantidad.');
+      toast.error('El pedido no puede estar vacío. Agrega al menos un artículo con descripción o cantidad.');
       return;
     }
     try {
@@ -72,9 +83,10 @@ export default function CreateMonthlyOrder() {
         fecha: new Date().toISOString().split('T')[0],
         items: filledItems,
       });
+      clearDraft();
       navigate('/monthly-orders');
     } catch (error: any) {
-      alert('Error al guardar: ' + (error.response?.data?.error || error.message));
+      toast.error('Error al guardar: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -136,7 +148,7 @@ export default function CreateMonthlyOrder() {
     ];
 
     // Filter by role: almacen/constructora only see toner; estacion sees all
-    const selectorCards = (['almacen', 'constructora'] as const).includes(user?.rol as any)
+    const selectorCards = (['almacen', 'constructora', 'sistemas'] as const).includes(user?.rol as any)
       ? allCards.filter(c => c.tipo === 'toner')
       : allCards;
 
@@ -308,13 +320,13 @@ export default function CreateMonthlyOrder() {
 
             {/* Actions */}
             <div className="doc-actions">
+              <DraftStatus savedAt={savedAt} />
               <button className="btn-glass-cancel" onClick={() => navigate('/create-monthly-order')} disabled={loading}>
                 <XMarkIcon style={{ width: 16, height: 16 }} />
                 Cancelar
               </button>
               <button className="btn-glass-save" onClick={handleSave} disabled={loading}>
-                <CheckIcon style={{ width: 16, height: 16 }} />
-                {loading ? 'Guardando...' : 'Hacer Pedido'}
+                {loading ? <BrandLoader variant="button" label="Guardando..." /> : <><CheckIcon style={{ width: 16, height: 16 }} /> Hacer Pedido</>}
               </button>
             </div>
           </div>

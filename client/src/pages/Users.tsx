@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import api from '../services/api';
+import BrandLoader from '../components/BrandLoader';
+import toast from 'react-hot-toast';
 import {
   XCircleIcon, UserPlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -72,17 +74,17 @@ export default function Users() {
           nombre: formData.nombre,
           estacion: formData.estacion,
         });
-        alert('Usuario actualizado');
+        toast.success('Usuario actualizado');
       } else {
         await api.post('/users', formData);
-        alert('Usuario creado exitosamente');
+        toast.success('Usuario creado exitosamente');
       }
 
       setShowModal(false);
       fetchUsers();
     } catch (error: any) {
       console.error('Error:', error);
-      alert(error.response?.data?.message || 'Error');
+      toast.error(error.response?.data?.message || 'No se pudo guardar el usuario');
     }
   };
 
@@ -91,11 +93,11 @@ export default function Users() {
 
     try {
       await api.delete(`/users/${id}`);
-      alert('Usuario eliminado');
+      toast.success('Usuario eliminado');
       fetchUsers();
     } catch (error: any) {
       console.error('Error:', error);
-      alert('Error al eliminar usuario');
+      toast.error('Error al eliminar usuario');
     }
   };
 
@@ -132,7 +134,7 @@ export default function Users() {
       </div>
 
       {loading ? (
-        <div className="loading">Cargando usuarios...</div>
+        <BrandLoader variant="page" label="Cargando usuarios..." />
       ) : users.length === 0 ? (
         <div className="empty-state">
           <p>No hay usuarios registrados</p>

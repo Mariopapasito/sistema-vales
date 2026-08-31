@@ -52,7 +52,7 @@ export const restoreSession = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState() as any;
-      let accessToken = state.auth.accessToken || localStorage.getItem('accessToken');
+      const accessToken = state.auth.accessToken || localStorage.getItem('accessToken');
       const storedRefresh = state.auth.refreshToken || localStorage.getItem('refreshToken');
 
       if (!accessToken && !storedRefresh) {
