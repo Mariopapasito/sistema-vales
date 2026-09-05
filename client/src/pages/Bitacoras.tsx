@@ -630,17 +630,54 @@ const Bitacoras: React.FC = () => {
     const node = mode === 'station' ? stationSheetRef.current : jefeSheetRef.current;
     if (!node) return;
 
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
-    const imgData = canvas.toDataURL('image/png');
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    await document.fonts.ready;
+
+    const nodeWidth = node.scrollWidth;
+    const nodeHeight = node.scrollHeight;
+    const maxCanvasArea = 16_000_000;
+    const captureScale = Math.max(1.5, Math.min(2.5, Math.sqrt(maxCanvasArea / (nodeWidth * nodeHeight))));
+    const canvas = await html2canvas(node, {
+      scale: captureScale,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true,
+      width: nodeWidth,
+      height: nodeHeight,
+      windowWidth: Math.max(900, nodeWidth),
+    });
+
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 8;
-    const imgProps = pdf.getImageProperties(imgData);
-    const ratio = Math.min((pageWidth - margin * 2) / imgProps.width, (pageHeight - margin * 2) / imgProps.height);
-    const width = imgProps.width * ratio;
-    const height = imgProps.height * ratio;
-    pdf.addImage(imgData, 'PNG', (pageWidth - width) / 2, (pageHeight - height) / 2, width, height, undefined, 'FAST');
+    const margin = 3;
+    const printableWidth = pageWidth - margin * 2;
+    const printableHeight = pageHeight - margin * 2;
+    const sourcePageHeight = Math.max(1, Math.floor(canvas.width * (printableHeight / printableWidth)));
+
+    let sourceY = 0;
+    let pageIndex = 0;
+
+    while (sourceY < canvas.height) {
+      const sliceHeight = Math.min(sourcePageHeight, canvas.height - sourceY);
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
+      const context = pageCanvas.getContext('2d');
+      if (!context) throw new Error('No se pudo preparar la página del PDF');
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      context.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+      if (pageIndex > 0) pdf.addPage();
+      const renderedHeight = sliceHeight * (printableWidth / canvas.width);
+      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', margin, margin, printableWidth, renderedHeight, undefined, 'SLOW');
+
+      sourceY += sliceHeight;
+      pageIndex += 1;
+    }
+
     pdf.save(mode === 'station' ? 'bitacora-estacion.pdf' : 'bitacora-jefe.pdf');
   };
 
@@ -729,13 +766,15 @@ const Bitacoras: React.FC = () => {
     if (entry.tipo === 'station') {
       const payload = entry.payload as Partial<StationFormState>;
       setStationForm(normalizeStationPayload(payload));
-      setTimeout(() => exportPdf('station'), 0);
+      setSelectedType('station');
+      requestAnimationFrame(() => requestAnimationFrame(() => void exportPdf('station')));
       return;
     }
 
     const payload = entry.payload as WeeklyFormState;
     setWeeklyForm(normalizeWeeklyPayload(payload));
-    setTimeout(() => exportPdf('jefe'), 0);
+    setSelectedType('weekly');
+    requestAnimationFrame(() => requestAnimationFrame(() => void exportPdf('jefe')));
   };
 
   if (!isJefe && !isEstacion) {
