@@ -650,33 +650,14 @@ const Bitacoras: React.FC = () => {
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 3;
+    const margin = 4;
     const printableWidth = pageWidth - margin * 2;
     const printableHeight = pageHeight - margin * 2;
-    const sourcePageHeight = Math.max(1, Math.floor(canvas.width * (printableHeight / printableWidth)));
+    const imgData = canvas.toDataURL('image/png');
 
-    let sourceY = 0;
-    let pageIndex = 0;
-
-    while (sourceY < canvas.height) {
-      const sliceHeight = Math.min(sourcePageHeight, canvas.height - sourceY);
-      const pageCanvas = document.createElement('canvas');
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceHeight;
-      const context = pageCanvas.getContext('2d');
-      if (!context) throw new Error('No se pudo preparar la página del PDF');
-
-      context.fillStyle = '#ffffff';
-      context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-      context.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-
-      if (pageIndex > 0) pdf.addPage();
-      const renderedHeight = sliceHeight * (printableWidth / canvas.width);
-      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', margin, margin, printableWidth, renderedHeight, undefined, 'SLOW');
-
-      sourceY += sliceHeight;
-      pageIndex += 1;
-    }
+    // Los formatos físicos fueron diseñados para una hoja carta. Se ajustan
+    // exactamente al área imprimible para conservarlos completos en una página.
+    pdf.addImage(imgData, 'PNG', margin, margin, printableWidth, printableHeight, undefined, 'SLOW');
 
     pdf.save(mode === 'station' ? 'bitacora-estacion.pdf' : 'bitacora-jefe.pdf');
   };

@@ -2349,26 +2349,26 @@ body.preview-modal-open .dashboard-header-mobile {
 
 .weekly-format-table th,
 .weekly-format-table td {
-  height: 16px;
+  height: 15px;
   padding: 1px 3px;
   border: 1px solid #3f4650;
   background: #fff;
-  font-size: 8px;
-  line-height: 1.08;
+  font-size: 7px;
+  line-height: 1.05;
 }
 
 .weekly-format-table .weekly-column-labels th {
-  height: 16px;
-  font-size: 8px;
+  height: 15px;
+  font-size: 7px;
   background: #f8fafc;
   text-align: center;
 }
 
 .weekly-format-table .weekly-yellow-heading th {
-  height: 18px;
+  height: 17px;
   padding: 1px 2px;
   background: #f2d400;
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 900;
   text-align: center;
 }
@@ -2391,7 +2391,7 @@ body.preview-modal-open .dashboard-header-mobile {
 .weekly-format-table .weekly-item-cell {
   padding-left: 4px;
   text-align: left;
-  font-size: 8.2px;
+  font-size: 7.2px;
   font-weight: 500;
 }
 
