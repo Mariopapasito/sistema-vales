@@ -635,6 +635,20 @@ const Bitacoras: React.FC = () => {
 
     const printStage = document.createElement('div');
     printStage.className = 'bitacora-print-stage';
+    // html2canvas mide la línea base con una imagen auxiliar de 1 × 1 en el
+    // documento original. El display:block de Tailwind desplaza esa medición.
+    // Este estilo temporal corrige solo ese auxiliar, también en el clon;
+    // desaparece junto con printStage al terminar la descarga.
+    const fontMetricStyle = document.createElement('style');
+    fontMetricStyle.textContent = `
+      body > div > img[width="1"][height="1"] {
+        display: inline-block !important;
+        width: 1px !important;
+        height: 1px !important;
+        max-width: none !important;
+      }
+    `;
+    printStage.appendChild(fontMetricStyle);
     const printNode = node.cloneNode(true) as HTMLElement;
     printNode.classList.add('bitacora-print-sheet');
 
