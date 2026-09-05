@@ -2440,6 +2440,146 @@ body.preview-modal-open .dashboard-header-mobile {
   display: none;
 }
 
+/* Copia aislada usada únicamente para descargar e imprimir las bitácoras. */
+.bitacora-print-stage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -2147483647;
+  width: 900px;
+  min-height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  background: #fff;
+}
+
+.bitacora-sheet.bitacora-print-sheet {
+  width: 900px !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-right: 26px !important;
+  padding-left: 26px !important;
+  box-shadow: none !important;
+}
+
+.bitacora-print-sheet.bitacora-estacion-sheet .bitacora-title-wrap h2 {
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.bitacora-print-sheet .station-section-heading,
+.bitacora-print-sheet .station-lower-heading {
+  display: flex;
+  min-height: 16px;
+  align-items: center;
+  justify-content: center;
+  line-height: 16px;
+}
+
+.bitacora-print-value {
+  box-sizing: border-box;
+  min-width: 0;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bitacora-print-sheet .station-line .bitacora-print-value {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-height: 21px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.bitacora-print-sheet .station-folio .bitacora-print-value {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  max-width: 74px;
+  min-height: 42px;
+  padding: 1px 5px;
+  color: #a51d2d;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 2px;
+}
+
+.bitacora-print-sheet .bitacora-table td .bitacora-print-value {
+  display: flex;
+  width: 100%;
+  min-height: 17px;
+  align-items: center;
+  padding: 1px 3px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.12;
+}
+
+.bitacora-print-sheet .station-requirements-grid .bitacora-print-value,
+.bitacora-print-sheet .station-follow-grid .bitacora-print-value,
+.bitacora-print-sheet .station-maintenance-row .bitacora-print-value {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-height: 20px;
+  padding: 1px 4px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.12;
+}
+
+.bitacora-print-sheet .station-instructions-table .bitacora-print-value {
+  display: flex;
+  width: 100%;
+  min-height: 18px;
+  align-items: center;
+  padding: 1px 2px;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.bitacora-print-sheet .station-signatures .bitacora-print-value {
+  min-height: 20px;
+  padding: 3px 2px 1px;
+  border-bottom: 1px solid #253047;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.bitacora-print-sheet .weekly-date-field .bitacora-print-value {
+  display: flex;
+  width: 100%;
+  max-width: 140px;
+  min-height: 23px;
+  align-items: center;
+  padding: 2px 4px;
+  border-bottom: 1px solid #111827;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.bitacora-print-sheet .weekly-observations-block .bitacora-print-value {
+  width: 100%;
+  min-height: 105px;
+  padding: 4px;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 23px, #6b7280 24px);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
 @media (max-width: 768px) {
   .bitacora-panel {
     overflow-x: auto;

@@ -633,33 +633,83 @@ const Bitacoras: React.FC = () => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     await document.fonts.ready;
 
-    const nodeWidth = node.scrollWidth;
-    const nodeHeight = node.scrollHeight;
-    const maxCanvasArea = 16_000_000;
-    const captureScale = Math.max(1.5, Math.min(2.5, Math.sqrt(maxCanvasArea / (nodeWidth * nodeHeight))));
-    const canvas = await html2canvas(node, {
-      scale: captureScale,
-      backgroundColor: '#ffffff',
-      logging: false,
-      useCORS: true,
-      width: nodeWidth,
-      height: nodeHeight,
-      windowWidth: Math.max(900, nodeWidth),
+    const printStage = document.createElement('div');
+    printStage.className = 'bitacora-print-stage';
+    const printNode = node.cloneNode(true) as HTMLElement;
+    printNode.classList.add('bitacora-print-sheet');
+
+    const sourceFields = Array.from(node.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea'));
+    const clonedFields = Array.from(printNode.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea'));
+
+    clonedFields.forEach((field, index) => {
+      const sourceField = sourceFields[index];
+      const value = sourceField?.value || '';
+      const printableValue = document.createElement('div');
+      printableValue.className = `bitacora-print-value bitacora-print-value--${field.tagName.toLowerCase()}`;
+      printableValue.textContent = sourceField instanceof HTMLInputElement && sourceField.type === 'date' && value
+        ? value.split('-').reverse().join('/')
+        : value;
+      field.replaceWith(printableValue);
     });
 
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 4;
-    const printableWidth = pageWidth - margin * 2;
-    const printableHeight = pageHeight - margin * 2;
-    const imgData = canvas.toDataURL('image/png');
+    printStage.appendChild(printNode);
+    document.body.appendChild(printStage);
 
-    // Los formatos físicos fueron diseñados para una hoja carta. Se ajustan
-    // exactamente al área imprimible para conservarlos completos en una página.
-    pdf.addImage(imgData, 'PNG', margin, margin, printableWidth, printableHeight, undefined, 'SLOW');
+    try {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await Promise.all(Array.from(printNode.querySelectorAll('img')).map(async (image) => {
+        if (!image.complete) {
+          await new Promise<void>((resolve) => {
+            image.addEventListener('load', () => resolve(), { once: true });
+            image.addEventListener('error', () => resolve(), { once: true });
+          });
+        }
+        if (typeof image.decode === 'function') await image.decode().catch(() => undefined);
+      }));
 
-    pdf.save(mode === 'station' ? 'bitacora-estacion.pdf' : 'bitacora-jefe.pdf');
+      const nodeWidth = printNode.scrollWidth;
+      const nodeHeight = printNode.scrollHeight;
+      const maxCanvasArea = 16_000_000;
+      const captureScale = Math.max(1.5, Math.min(2.5, Math.sqrt(maxCanvasArea / (nodeWidth * nodeHeight))));
+      const canvas = await html2canvas(printNode, {
+        scale: captureScale,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+        width: nodeWidth,
+        height: nodeHeight,
+        windowWidth: 900,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 3;
+      const printableWidth = pageWidth - margin * 2;
+      const printableHeight = pageHeight - margin * 2;
+
+      // El clon tiene todos los valores convertidos a texto visible. Así se usa
+      // toda la hoja sin que html2canvas corte el contenido de inputs o textareas.
+      pdf.addImage(
+        canvas.toDataURL('image/png'),
+        'PNG',
+        margin,
+        margin,
+        printableWidth,
+        printableHeight,
+        undefined,
+        'SLOW'
+      );
+
+      pdf.save(mode === 'station' ? 'bitacora-estacion.pdf' : 'bitacora-jefe.pdf');
+    } catch (error) {
+      console.error('Error exporting bitacora PDF:', error);
+      toast.error('No se pudo generar el PDF. Intenta nuevamente.');
+    } finally {
+      printStage.remove();
+    }
   };
 
   const archiveEntries = useMemo(() => registeredBitacoras, [registeredBitacoras]);

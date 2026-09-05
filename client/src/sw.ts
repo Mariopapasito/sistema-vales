@@ -2,7 +2,7 @@
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 
@@ -54,11 +54,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(caches.delete(API_CACHE));
 });
 
-// SPA navigation: serve index.html offline
+// Navegación: obtener primero la versión actual y usar caché solo sin conexión.
 registerRoute(
   new NavigationRoute(
-    new StaleWhileRevalidate({
+    new NetworkFirst({
       cacheName: 'pages',
+      networkTimeoutSeconds: 4,
       plugins: [new ExpirationPlugin({ maxEntries: 10 })],
     })
   )
@@ -108,7 +109,7 @@ registerRoute(
   'PATCH'
 );
 
-// ─── Push notifications (existing logic) ────────────────────────────────────
+// ─── Push notifications
 
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
