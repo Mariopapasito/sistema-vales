@@ -160,21 +160,16 @@ export const OrderDetail: React.FC = () => {
     if (!element) return;
 
     try {
-      // Ocultar botones temporalmente
-      const editButtonsDiv = element.querySelector('div[style*="position: absolute"]') as HTMLElement;
-      let originalDisplay = '';
-      if (editButtonsDiv) {
-        originalDisplay = editButtonsDiv.style.display;
-        editButtonsDiv.style.display = 'none';
-      }
-
-      // Usar html2canvas + jsPDF para tener control sobre marca de agua
-      const canvas = await html2canvas(element, { scale: 2 });
-      
-      // Restaurar botones
-      if (editButtonsDiv) {
-        editButtonsDiv.style.display = originalDisplay;
-      }
+      // Preparar solo la copia de impresión: conservar los adjuntos en pantalla,
+      // pero eliminarlos del PDF sin dejar el espacio que ocupaban.
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        onclone: (document) => {
+          const cloned = document.getElementById(element.id);
+          cloned?.querySelector('div[style*="position: absolute"]')?.remove();
+          cloned?.querySelectorAll('.order-attachments').forEach(node => node.remove());
+        },
+      });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
@@ -355,6 +350,7 @@ export const OrderDetail: React.FC = () => {
     <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem 2rem', width: '100%' }}>
         {previewImage && (
           <div
+            className="order-attachment-preview"
             onClick={() => setPreviewImage(null)}
             style={{
               position: 'fixed',
@@ -552,7 +548,7 @@ export const OrderDetail: React.FC = () => {
 
           {/* IMÁGENES ADJUNTAS */}
           {['compras', 'sistemas'].includes(user?.rol || '') && order.imagenes && order.imagenes.length > 0 && (
-            <div style={{ marginTop: '1.5rem', padding: '1.25rem', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+            <div className="order-attachments" style={{ marginTop: '1.5rem', padding: '1.25rem', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
               <h3 style={{ margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1rem', fontWeight: 700 }}>Imágenes adjuntas</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
                 {order.imagenes.map((src, idx) => (
@@ -1030,7 +1026,7 @@ export const OrderDetail: React.FC = () => {
               </table>
 
               {order.imagenes && order.imagenes.length > 0 && (
-                <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div className="order-attachments" style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                   <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700, color: '#1f2937' }}>Imágenes adjuntas</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
                     {order.imagenes.map((src, idx) => (
@@ -1073,6 +1069,10 @@ export const OrderDetail: React.FC = () => {
         {/* CSS PARA IMPRESIÓN */}
         <style>{`
           @media print {
+            .order-attachments,
+            .order-attachment-preview {
+              display: none !important;
+            }
             body {
               margin: 0;
               padding: 0;

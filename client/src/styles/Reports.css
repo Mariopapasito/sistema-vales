@@ -1858,11 +1858,24 @@ body.preview-modal-open .dashboard-header-mobile {
   background: white;
 }
 
+.report-description {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.report-description strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.report-description p,
 .image-description p {
   margin: 0;
   font-size: 0.9rem;
   color: #475569;
   line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .doc-footer {

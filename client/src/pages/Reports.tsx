@@ -334,47 +334,58 @@ export const Reports: React.FC = () => {
         });
       };
 
-      let isFirstPage = true;
-
-      // Iterar sobre cada imagen
       const imagenes = selectedReport.imagenes || [];
+      const contentBottom = pageHeight - margin - 10;
+      const lineHeight = 4.5;
+      let cursorY = 0;
+      const startPage = async (addPage = true) => {
+        if (addPage) pdf.addPage();
+        await addWatermark();
+        if (logoData) pdf.addImage(logoData, 'PNG', margin, margin, 20, 20);
+        pdf.setFontSize(9);
+        const titleLines = pdf.splitTextToSize(`Título: ${selectedReport.titulo}`, contentWidth - 25);
+        let headerY = margin + 5;
+        for (const line of titleLines) {
+          pdf.text(line, margin + 25, headerY);
+          headerY += lineHeight;
+        }
+        pdf.text(`Creado el: ${new Date(selectedReport.createdAt).toLocaleDateString('es-MX')}`, margin + 25, headerY);
+        pdf.text(`Nro. de elementos: ${imagenes.length}`, margin + 25, headerY + 5);
+        const ruleY = Math.max(margin + 22, headerY + 9);
+        pdf.setDrawColor(0);
+        pdf.line(margin, ruleY, pageWidth - margin, ruleY);
+        cursorY = ruleY + 7;
+      };
+      // Escribir el texto completo, respetando párrafos, márgenes y pie de página.
+      const writeDescription = async (text: string) => {
+        pdf.setFontSize(9);
+        for (const line of pdf.splitTextToSize(text.replace(/\r\n?/g, '\n'), contentWidth)) {
+          if (cursorY > contentBottom) await startPage();
+          pdf.text(line, margin, cursorY);
+          cursorY += lineHeight;
+        }
+        cursorY += 3;
+      };
+      await startPage(false);
+      if (selectedReport.descripcion?.trim()) {
+        await writeDescription('Descripción del reporte:');
+        await writeDescription(selectedReport.descripcion);
+      }
+
       for (let i = 0; i < imagenes.length; i++) {
         const image = imagenes[i];
         const imageUrl = image.url.startsWith('data:') || image.url.startsWith('http')
           ? image.url
           : `${getBaseURL()}${image.url}`;
+        if (i > 0 || contentBottom - cursorY < 65) await startPage();
 
-        if (!isFirstPage) {
-          pdf.addPage();
-        }
-        isFirstPage = false;
-
-        // Agregar marca de agua de fondo
-        await addWatermark();
-
-        // Agregar logo en el encabezado
-        if (logoData) {
-          pdf.addImage(logoData, 'PNG', margin, margin, 20, 20);
-        }
-
-        // Header con información (desplazado para dejar espacio al logo)
-        const fontSize = 9;
-        pdf.setFontSize(fontSize);
-        pdf.text(`Título: ${selectedReport.titulo}`, margin + 25, margin + 5);
-        pdf.text(
-          `Creado el: ${new Date(selectedReport.createdAt).toLocaleDateString('es-MX')}`,
-          margin + 25,
-          margin + 10
-        );
-        pdf.text(`Nro. de elementos: ${imagenes.length}`, margin + 25, margin + 15);
-
-        // Línea separadora
-        pdf.setDrawColor(0);
-        pdf.line(margin, margin + 22, pageWidth - margin, margin + 22);
-
-        // Número de imagen
         pdf.setFontSize(12);
-        pdf.text(`(${i + 1})`, margin + 2, margin + 32);
+        pdf.text(`(${i + 1})`, margin + 2, cursorY);
+        cursorY += 5;
+        pdf.setFontSize(9);
+        const captionHeight = image.descripcion
+          ? Math.min(35, pdf.splitTextToSize(image.descripcion, contentWidth).length * lineHeight + 7)
+          : 0;
 
         // Obtener imagen y agregarla
         try {
@@ -384,17 +395,11 @@ export const Reports: React.FC = () => {
 
           await new Promise<void>((resolve, reject) => {
             img.onload = () => {
-              const imgWidth = contentWidth - 4;
-              const imgHeight = (img.height / img.width) * imgWidth;
-              const maxHeight = pageHeight - margin - 80; // Dejar espacio para header y footer
-
-              let finalHeight = imgHeight;
-              if (finalHeight > maxHeight) {
-                finalHeight = maxHeight;
-              }
-
-              const imgX = margin + 2;
-              const imgY = margin + 35;
+              const ratio = Math.min((contentWidth - 4) / img.width, (contentBottom - cursorY - captionHeight - 5) / img.height);
+              const imgWidth = img.width * ratio;
+              const finalHeight = img.height * ratio;
+              const imgX = (pageWidth - imgWidth) / 2;
+              const imgY = cursorY;
 
               // Convertir imagen a canvas y luego a datos
               const canvas = document.createElement('canvas');
@@ -405,6 +410,7 @@ export const Reports: React.FC = () => {
                 ctx.drawImage(img, 0, 0);
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth, finalHeight);
+                cursorY += finalHeight + 6;
               }
 
               resolve();
@@ -415,16 +421,19 @@ export const Reports: React.FC = () => {
           });
         } catch (err) {
           console.error('Error processing image:', err);
+          await writeDescription('Imagen no disponible');
         }
 
         // Descripción de imagen
         if (image.descripcion) {
-          const descY = pageHeight - margin - 30;
-          pdf.setFontSize(9);
-          pdf.text(image.descripcion, margin, descY, { maxWidth: contentWidth });
+          await writeDescription(image.descripcion);
         }
+      }
 
-        // Footer con número de página
+      // Numerar después de paginar también las descripciones largas.
+      const totalPages = pdf.getNumberOfPages();
+      for (let page = 1; page <= totalPages; page++) {
+        pdf.setPage(page);
         pdf.setFontSize(8);
         pdf.text(
           `ld. de doc. 10`,
@@ -432,7 +441,7 @@ export const Reports: React.FC = () => {
           pageHeight - margin + 2
         );
         pdf.text(
-          `página ${i + 1} de ${imagenes.length}`,
+          `página ${page} de ${totalPages}`,
           pageWidth - margin - 35,
           pageHeight - margin + 2,
           { align: 'right' }
@@ -760,6 +769,13 @@ export const Reports: React.FC = () => {
                           <span>Nro. de elementos: {selectedReport.imagenes!.length}</span>
                         </div>
                       </div>
+
+                      {idx === 0 && selectedReport.descripcion?.trim() && (
+                        <div className="report-description">
+                          <strong>Descripción del reporte</strong>
+                          <p>{selectedReport.descripcion}</p>
+                        </div>
+                      )}
 
                       <div className="image-viewer-scroll">
                         <div className="image-number">{idx + 1}</div>
