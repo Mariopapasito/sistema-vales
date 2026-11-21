@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { lazy, Suspense, useEffect } from 'react';
 import { RootState, AppDispatch } from './store';
@@ -25,9 +25,13 @@ const MonthlyOrderDetail = lazy(() => import('./pages/MonthlyOrderDetail'));
 const Reports = lazy(() => import('./pages/Reports').then((module) => ({ default: module.Reports })));
 const Bitacoras = lazy(() => import('./pages/Bitacoras'));
 const ActivityLogs = lazy(() => import('./pages/ActivityLogs'));
+const Attendance = lazy(() => import('./pages/Attendance'));
+const AttendanceClock = lazy(() => import('./pages/AttendanceClock'));
 
 export default function App() {
-  const { accessToken } = useSelector((state: RootState) => state.auth);
+  const { accessToken, user } = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
+  const home = user?.rol === 'rh' ? '/attendance' : '/dashboard';
   const dispatch = useDispatch<AppDispatch>();
 
   // Restore session and register service worker once on mount
@@ -42,20 +46,22 @@ export default function App() {
 
   // Re-subscribe to push every time the user logs in (accessToken appears)
   useEffect(() => {
-    if (accessToken) {
+    if (accessToken && user && user.rol !== 'rh') {
       subscribeToPushNotifications();
     }
-  }, [accessToken]);
+  }, [accessToken, user?.rol]);
 
   return (
     <>
       <Suspense fallback={<BrandLoader variant="page" label="Cargando pantalla..." />}>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        <Route path="/" element={accessToken ? <Navigate to={home} /> : <Navigate to="/login" />} />
+        <Route path="/attendance/clock" element={<AttendanceClock />} />
 
         {/* Todas las rutas protegidas comparten el mismo AppLayout (Sidebar persiste) */}
         <Route element={<AppLayout />}>
+          <Route path="/attendance" element={<RoleRoute roles={['rh', 'estacion', 'jefe']}><Attendance /></RoleRoute>} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-order" element={<CreateOrder />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
@@ -70,11 +76,11 @@ export default function App() {
           <Route path="/activity-logs" element={<RoleRoute roles={['jefe', 'sistemas']}><ActivityLogs /></RoleRoute>} />
         </Route>
 
-        <Route path="*" element={accessToken ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        <Route path="*" element={accessToken ? <Navigate to={home} /> : <Navigate to="/login" />} />
       </Routes>
       </Suspense>
       <OfflineBanner />
-      <GlobalChat />
+      {user?.rol !== 'rh' && location.pathname !== '/attendance/clock' && <GlobalChat />}
     </>
   );
 }

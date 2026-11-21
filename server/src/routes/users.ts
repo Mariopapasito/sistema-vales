@@ -18,6 +18,9 @@ const canManageUsers = (req: AuthRequest, res: Response, next: NextFunction) => 
 router.post('/', protect, canManageUsers, async (req: AuthRequest, res: Response) => {
   try {
     const { nombre, email, password, rol, estacion } = req.body;
+    if (rol && !['jefe', 'sistemas', 'estacion', 'compras', 'almacen', 'constructora', 'marketing', 'rh'].includes(rol)) {
+      return res.status(400).json({ message: 'Rol inválido' });
+    }
     if (!nombre || !email || !password) {
       return res.status(400).json({ message: 'Nombre, email y contraseña son requeridos' });
     }

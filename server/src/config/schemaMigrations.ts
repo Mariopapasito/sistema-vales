@@ -16,6 +16,7 @@ const hasIndex = async (table: string, index: string): Promise<boolean> => {
 };
 
 const migrations: Migration[] = [
+  // Attendance tables are registered by models/Attendance and created non-destructively by sync below.
   {
     id: '001_push_subscriptions',
     up: async () => {
@@ -88,6 +89,14 @@ const migrations: Migration[] = [
         ALTER TABLE monthly_orders MODIFY COLUMN tipo
         ENUM('aceites','papeleria','limpieza','toner','imprenta') NOT NULL
       `);
+    },
+  },
+  {
+    id: '008_attendance_rh_role',
+    up: async () => {
+      await sequelize.query(`ALTER TABLE users MODIFY COLUMN rol
+        ENUM('jefe','sistemas','estacion','compras','almacen','constructora','marketing','rh')
+        NOT NULL DEFAULT 'estacion'`);
     },
   },
 ];

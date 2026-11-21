@@ -1,7 +1,11 @@
 node_modules/
+node_modules*/
 dist/
 .env
 .env.local
+.env.*.local
+server/local-credentials.json
+.local-data/
 .env.production
 *.log
 .DS_Store

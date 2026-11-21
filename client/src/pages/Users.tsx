@@ -263,6 +263,7 @@ export default function Users() {
                       <option value="sistemas">Sistemas</option>
                       <option value="jefe">Jefe</option>
                       <option value="compras">Compras</option>
+                      <option value="rh">Recursos Humanos (RH)</option>
                     </select>
                   </div>
                 </>

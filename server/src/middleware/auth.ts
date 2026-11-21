@@ -40,7 +40,7 @@ export const protect = async (
     // Get user from token
     const user = await User.findByPk(decoded.id);
 
-    if (!user) {
+    if (!user || !user.activo) {
       res.status(401).json({ message: 'Not authorized - User not found' });
       return;
     }
@@ -54,6 +54,15 @@ export const protect = async (
       estacion: user.estacion
     };
     req.userId = user.id;
+
+    // The new RH role has no implicit access to legacy endpoints that allow every logged-in user.
+    const pathname = req.originalUrl.split('?')[0];
+    if (user.rol === 'rh' && !pathname.startsWith('/api/attendance/') &&
+        !pathname.startsWith('/api/auth/') &&
+        !(pathname === `/api/users/${user.id}` && ['GET', 'PUT'].includes(req.method))) {
+      res.status(403).json({ message: 'RH solo tiene acceso a asistencia y a su perfil.' });
+      return;
+    }
 
     next();
   } catch (error) {

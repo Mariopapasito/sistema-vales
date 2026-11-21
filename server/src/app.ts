@@ -34,6 +34,7 @@ import activityLogsRoutes from './routes/activityLogs';
 import messagesRoutes from './routes/messages';
 import bitacoraRoutes from './routes/bitacoras';
 import Bitacora from './models/Bitacora';
+import attendanceRoutes from './routes/attendance';
 
 const app = express();
 
@@ -169,6 +170,7 @@ app.use('/api/monthly-orders', monthlyOrderCommentRoutes);
 app.use('/api/activity-logs', activityLogsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/bitacoras', bitacoraRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -194,9 +196,10 @@ export const startServer = async (): Promise<void> => {
   await connectDB();
   await runSchemaMigrations();
 
-  httpServer.listen(PORT, '0.0.0.0', () => {
+  const host = process.env.VALES_LOCAL_ONLY === '1' ? '127.0.0.1' : '0.0.0.0';
+  httpServer.listen(PORT, host, () => {
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[DEV] Server on http://0.0.0.0:${PORT}`);
+      console.log(`[DEV] Server on http://${host}:${PORT}`);
     }
   });
 };

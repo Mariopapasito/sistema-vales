@@ -1,6 +1,10 @@
 import { Sequelize } from 'sequelize';
+import { validateLocalDatabase } from './localEnvironment';
 
-const dbUrl = process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL || process.env.DATABASE_URL;
+const localOnly = process.env.VALES_LOCAL_ONLY === '1';
+if (localOnly) validateLocalDatabase(process.env);
+// Explicit local commands never use inherited Railway URLs, even if a developer has them in their shell.
+const dbUrl = localOnly ? undefined : process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL || process.env.DATABASE_URL;
 
 const pool = { max: 5, min: 1, acquire: 60000, idle: 300000 };
 

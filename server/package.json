@@ -5,6 +5,9 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "dev:local": "ts-node-dev --respawn --transpile-only src/scripts/startLocal.ts",
+    "db:migrate:local": "npm run build && node dist/scripts/migrateLocal.js",
+    "seed:attendance:local": "npm run build && node dist/scripts/seedAttendanceLocal.js",
     "build": "tsc",
     "start": "node dist/app.js",
     "lint": "eslint src/**/*.ts",

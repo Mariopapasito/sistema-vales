@@ -1,0 +1,3 @@
+body { margin: 0; background: #eef2fa; }
+.reader-test-page { padding: 20px; }
+@media (max-width: 600px) { .reader-test-page { padding: 10px; } }

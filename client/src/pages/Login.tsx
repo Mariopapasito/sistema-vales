@@ -29,7 +29,7 @@ export const Login: React.FC = () => {
     try {
       const result = await dispatch(login({ email, password }));
       if (login.fulfilled.match(result)) {
-        navigate('/dashboard');
+        navigate(result.payload.user.rol === 'rh' ? '/attendance' : '/dashboard');
       } else {
         setError('Correo o contraseña incorrectos');
       }

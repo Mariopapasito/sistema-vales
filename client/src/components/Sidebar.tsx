@@ -110,7 +110,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           </div>
           <div className="user-info">
             <p className="user-name">{user?.nombre || 'Usuario'}</p>
-            <p className="user-role">{user?.rol === 'jefe' ? 'Jefe' : user?.rol === 'sistemas' ? 'Sistemas' : user?.rol === 'estacion' ? 'Estación' : user?.rol === 'almacen' ? 'Almacén' : user?.rol === 'constructora' ? 'Constructora' : user?.rol === 'marketing' ? 'Marketing' : 'Compras'}</p>
+            <p className="user-role">{user?.rol === 'rh' ? 'Recursos Humanos' : user?.rol === 'jefe' ? 'Jefe' : user?.rol === 'sistemas' ? 'Sistemas' : user?.rol === 'estacion' ? 'Estación' : user?.rol === 'almacen' ? 'Almacén' : user?.rol === 'constructora' ? 'Constructora' : user?.rol === 'marketing' ? 'Marketing' : 'Compras'}</p>
             <p className="user-station">{user?.estacion || 'N/A'}</p>
           </div>
         </div>
@@ -126,10 +126,17 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           )}
 
           {/* Dashboard - Todos */}
-          <button ref={refIfActive('/dashboard')} onClick={() => handleNavClick('/dashboard')} className={navClass('/dashboard')}>
+          {user?.rol !== 'rh' && <button ref={refIfActive('/dashboard')} onClick={() => handleNavClick('/dashboard')} className={navClass('/dashboard')}>
             <ClipboardDocumentListIcon className="nav-icon" />
             <span className="nav-text">Vales</span>
-          </button>
+          </button>}
+
+          {['rh', 'estacion', 'jefe'].includes(user?.rol || '') && <>
+            <button ref={refIfActive('/attendance')} onClick={() => handleNavClick('/attendance')} className={navClass('/attendance')}>
+              <CalendarDaysIcon className="nav-icon" /><span className="nav-text">{user?.rol === 'rh' ? 'Asistencia RH' : user?.rol === 'jefe' ? 'Asistencia · consulta' : 'Turnos de personal'}</span>
+            </button>
+            {user?.rol === 'estacion' && <button onClick={() => handleNavClick('/attendance/clock')} className="nav-item"><UsersIcon className="nav-icon" /><span className="nav-text">Reloj checador</span></button>}
+          </>}
 
           {/* Create Order - Estacion + roles similares + jefe + sistemas + compras */}
           {['estacion', 'almacen', 'constructora', 'marketing', 'jefe', 'sistemas', 'compras'].includes(user?.rol || '') && (

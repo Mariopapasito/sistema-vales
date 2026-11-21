@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+export default defineConfig(({ command, mode }) => ({
+  // Explicit local tests cannot inherit a remote API URL. Production builds are unchanged.
+  define: command === 'serve' && mode === 'local-test'
+    ? { 'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:3001/api') }
+    : undefined,
   plugins: [
     react(),
     VitePWA({
@@ -41,4 +45,4 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
   }
-});
+}));

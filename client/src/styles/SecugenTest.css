@@ -1,0 +1,25 @@
+.secugen-test { color: #17233d; background: #fff; border: 1px solid #dce4f1; border-radius: 24px; padding: 28px; margin: 20px auto; max-width: 960px; font: 15px/1.6 system-ui, sans-serif; }
+.secugen-test * { box-sizing: border-box; }
+.secugen-test h2 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 6px 0; }
+.secugen-test h3 { margin: 6px 0; font-size: 1.1rem; }
+.secugen-test p { color: #52617a; margin: 10px 0; }
+.secugen-eyebrow, .secugen-step { color: #0e2b9d; font-size: .8rem; font-weight: 750; letter-spacing: .08em; }
+.secugen-test details { border: 1px solid #dce4f1; padding: 12px 16px; border-radius: 12px; margin: 18px 0; }
+.secugen-test summary { cursor: pointer; font-weight: 650; }
+.secugen-test a { color: #0e2b9d; text-decoration: underline; }
+.secugen-settings, .secugen-samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.secugen-test label { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; }
+.secugen-test input, .secugen-test select { font: inherit; padding: 10px; border: 1px solid #b6c4da; border-radius: 10px; width: 100%; color: #17233d; background: #fff; }
+.secugen-test .secugen-consent { flex-direction: row; align-items: start; margin: 20px 0; gap: 10px; }
+.secugen-test input[type=checkbox] { width: 19px; height: 19px; min-height: 0; margin: 4px 0 0; flex-shrink: 0; accent-color: #0e2b9d; }
+.secugen-samples article { border: 1px solid #dce4f1; border-radius: 16px; background: #f6f8fc; padding: 20px; }
+.secugen-test button { font: inherit; font-weight: 650; background: #0e2b9d; color: #fff; border: 1px solid #0e2b9d; border-radius: 10px; min-height: 44px; padding: 10px 16px; cursor: pointer; }
+.secugen-test button:disabled { opacity: .45; cursor: not-allowed; }
+.secugen-test button.secugen-secondary { background: #fff; color: #0e2b9d; }
+.secugen-test :focus-visible { outline: 3px solid #86a9ff; outline-offset: 3px; }
+.secugen-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.secugen-message, .secugen-error, .secugen-result { padding: 16px; border-radius: 12px; background: #edf2ff; overflow-wrap: anywhere; }
+.secugen-test .secugen-error, .secugen-result.no-match { background: #fff2ec; color: #8b3325; }
+.secugen-result.match { background: #e8f7ef; color: #19613f; }
+.secugen-test footer { color: #61718a; font-size: .8rem; border-top: 1px solid #dce4f1; padding-top: 18px; margin-top: 24px; }
+@media (max-width: 600px) { .secugen-settings, .secugen-samples { grid-template-columns: 1fr; } .secugen-test { padding: 18px; border-radius: 16px; } .secugen-actions button { width: 100%; } }

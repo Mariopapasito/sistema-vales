@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import Sidebar from './Sidebar';
@@ -8,7 +8,8 @@ import { Bars3Icon } from '@heroicons/react/24/outline';
 import '../styles/Dashboard.css';
 
 export default function AppLayout() {
-  const { accessToken, initialized } = useSelector((state: RootState) => state.auth);
+  const { accessToken, initialized, user } = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function AppLayout() {
   }
 
   if (!accessToken) return <Navigate to="/login" />;
+  if (user?.rol === 'rh' && !['/attendance', '/profile'].includes(location.pathname)) return <Navigate to="/attendance" replace />;
 
   return (
     <div className="dashboard-layout">
